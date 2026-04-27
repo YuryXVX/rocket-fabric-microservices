@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+option go_package = "github.com/YuryXVX/rocket-fabric/shared/pkg/proto/payment/v1;payment_v1";
+
+package payment.v1;
+
+// PaymentService предоставляет API оплаты заказа
+service PaymentService {
+  // PayOrder оплачивает заказ
+  rpc PayOrder(PayOrderRequest) returns (PayOrderResponse);
+}
+
+// Ответ от запроса PayOrder
+message PayOrderResponse {
+  // UID транзакции оплаты
+  string transaction_uuid = 1;
+}
+
+// Запроса PayOrder
+message PayOrderRequest {
+    // UUID заказа
+    string order_uuid = 1;
+    // UUID пользователя, который инициирует оплату
+    string user_uuid = 2;
+    // Выбранный способ оплаты 
+    PaymentMethod payment_method = 3;
+}
+
+// перечесления способа оплаты
+enum PaymentMethod {
+    // Неизвестный способ 
+    PAYMENT_METHOD_UNSPECIFIED = 0;
+    // Банковская карта
+    PAYMENT_METHOD_CARD = 1;
+    // Система быстрых платежей
+    PAYMENT_METHOD_SBP = 2;
+    // Кредитная карта 
+    PAYMENT_METHOD_CREDIT_CARD = 3;
+    // Деньги инвестора (внутренний метод)
+    PAYMENT_METHOD_INVESTOR_MONEY = 4;
+}
+ 
