@@ -1,7 +1,11 @@
 package v1
 
-type api struct{}
+type api struct {
+	service OrderService
+}
 
-func New() *api {
-	return &api{}
+func New(s OrderService) *api {
+	return &api{
+		service: s,
+	}
 }

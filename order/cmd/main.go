@@ -11,27 +11,38 @@ import (
 	"syscall"
 	"time"
 
+	customMiddleware "order/internal/api/middleware"
+	apiV1 "order/internal/api/order/v1"
+	"order/internal/client/grpc/inventory"
+	"order/internal/client/grpc/payment"
+	service "order/internal/service/order"
+	orderV1 "shared/pkg/openapi/order/v1"
+	inventoryV1 "shared/pkg/proto/inventory/v1"
+	paymentV1 "shared/pkg/proto/payment/v1"
+
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
-	customMiddleware "order/internal/api/middleware"
-	v1 "order/internal/api/order/v1"
-	orderv1 "shared/pkg/openapi/order/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
 	httpPort = "8080"
 
-	// Таймауты для HTTP-сервера
+	// // Таймауты для HTTP-сервера
 	readHeaderTimeout = 5 * time.Second
 	readTimeout       = 15 * time.Second
 	writeTimeout      = 15 * time.Second
 	idleTimeout       = 60 * time.Second
 	shutdownTimeout   = 10 * time.Second
-	middlewareTimeout = 10 * time.Second
+	middlewareTimeout = 100 * time.Second
+
+	inventoryAddress = "localhost:50051"
+	paymentAddress   = "localhost:50050"
 )
 
-func setupRouter(h orderv1.Handler) (chi.Router, error) {
-	orderServer, err := orderv1.NewServer(h)
+func setupRouter(h orderV1.Handler) (chi.Router, error) {
+	orderServer, err := orderV1.NewServer(h)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания сервера OpenAPI: %w", err)
 	}
@@ -49,7 +60,48 @@ func setupRouter(h orderv1.Handler) (chi.Router, error) {
 }
 
 func main() {
-	handler := v1.New()
+	paymentConn, err := grpc.NewClient(paymentAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	if err != nil {
+		slog.Error("произошла ошибка при создании клиента payment", "error", err)
+		return
+	}
+
+	defer func() {
+		if err := paymentConn.Close(); err != nil {
+			slog.Error("ошибка закрытия соединения", "error", err)
+		}
+	}()
+
+	inventoryConn, err := grpc.NewClient(inventoryAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	if err != nil {
+		slog.Error("произошла ошибка при создании клиента inventory", "error", err)
+		return
+	}
+
+	defer func() {
+		if err := inventoryConn.Close(); err != nil {
+			slog.Error("ошибка закрытия соединения", "error", err)
+		}
+	}()
+
+	serviceInventory := inventoryV1.NewPartServiceClient(inventoryConn)
+	servicePayment := paymentV1.NewBillingServiceClient(paymentConn)
+
+	inventoryClient := inventory.New(serviceInventory)
+	paymentClient := payment.New(servicePayment)
+
+	service := service.New(
+		inventoryClient,
+		paymentClient,
+	)
+
+	handler := apiV1.New(service)
 
 	r, err := setupRouter(handler)
 	if err != nil {
@@ -80,14 +132,12 @@ func main() {
 	<-ctx.Done()
 	slog.Info("🛑 завершение работы сервера...")
 
-	// Создаем контекст с таймаутом для остановки сервера
-	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), time.Hour)
 	defer cancelShutdown()
 
 	if shutdownErr := server.Shutdown(shutdownCtx); shutdownErr != nil {
 		if errors.Is(shutdownErr, context.DeadlineExceeded) {
-			// Проверяем, является ли ошибка результатом истечения таймаута
-			slog.Error("❌ время остановки сервера истекло", "timeout", shutdownTimeout)
+			slog.Error("❌ время остановки сервера истекло", "timeout", time.Hour)
 		} else {
 			slog.Error("❌ ошибка при остановке сервера", "error", shutdownErr)
 		}

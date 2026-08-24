@@ -1,0 +1,30 @@
+package input
+
+import (
+	"fmt"
+
+	"github.com/google/uuid"
+)
+
+type CreateOrderInput struct {
+	HullUUID   uuid.UUID
+	EngineUUID uuid.UUID
+	ShieldUUID *uuid.UUID
+	WeaponUUID *uuid.UUID
+}
+
+func (i *CreateOrderInput) PartUUIDs() []uuid.UUID {
+	uuids := []uuid.UUID{i.EngineUUID, i.HullUUID}
+
+	// if i.ShieldUUID != nil {
+	// 	uuids = append(uuids, *i.ShieldUUID)
+	// }
+
+	// if i.WeaponUUID != nil {
+	// 	uuids = append(uuids, *i.WeaponUUID)
+	// }
+
+	fmt.Println("In", uuids)
+
+	return uuids
+}

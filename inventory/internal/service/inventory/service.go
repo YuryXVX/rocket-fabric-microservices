@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/google/uuid"
 	errs "inventory/internal/errors"
 	"inventory/internal/model"
 	"inventory/internal/service/input"
+
+	"github.com/google/uuid"
 )
 
 type service struct {
