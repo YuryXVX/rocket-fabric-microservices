@@ -47,3 +47,64 @@ const (
 	OrderStatusPaid           OrderStatus = "PAID"
 	OrderStatusCancelled      OrderStatus = "CANCELLED"
 )
+
+type PaymentMethod string
+
+const (
+	PaymentMethodCard          PaymentMethod = "CARD"
+	PaymentMethodSBP           PaymentMethod = "SBP"
+	PaymentMethodCreditCard    PaymentMethod = "CREDIT_CARD"
+	PaymentMethodInvestorMoney PaymentMethod = "INVESTOR_MONEY"
+)
+
+func (m *Order) HullUUID() uuid.UUID {
+	var uuid uuid.UUID
+
+	for _, detail := range m.Items {
+		if detail.PartType == PartTypeHull {
+			uuid = detail.PartUUID
+		}
+	}
+
+	return uuid
+}
+
+func (m *Order) EngineUUID() uuid.UUID {
+	var uuid uuid.UUID
+
+	for _, detail := range m.Items {
+		if detail.PartType == PartTypeEngine {
+			uuid = detail.PartUUID
+		}
+	}
+
+	return uuid
+}
+
+func (m *Order) ShieldUUID() *uuid.UUID {
+	var uuid uuid.UUID
+
+	for _, detail := range m.Items {
+		if detail.PartType == PartTypeShield {
+			uuid = detail.PartUUID
+		}
+	}
+
+	return &uuid
+}
+
+func (m *Order) WeaponUUID() *uuid.UUID {
+	var uuid uuid.UUID
+
+	for _, detail := range m.Items {
+		if detail.PartType == PartTypeWeapon {
+			uuid = detail.PartUUID
+		}
+	}
+
+	return &uuid
+}
+
+func (m *Order) OrderItems(items []OrderItem) {
+	m.Items = items
+}

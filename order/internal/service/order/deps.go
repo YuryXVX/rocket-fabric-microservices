@@ -13,10 +13,15 @@ type OrderRepository interface {
 	Update(ctx context.Context, order model.Order) error
 }
 
+type PartRepository interface {
+	GetPart(ctx context.Context, orderUUID uuid.UUID) ([]model.OrderItem, error)
+	SavePart(ctx context.Context, orderUUID uuid.UUID, items []model.OrderItem) error
+}
+
 type InventoryClientGrpc interface {
 	ListParts(ctx context.Context, in []uuid.UUID) ([]model.OrderItem, error)
 }
 
 type PaymentClientGrpc interface {
-	PayOrder(ctx context.Context)
+	PayOrder(ctx context.Context, orderUUID string, paymentMethod model.PaymentMethod) (uuid.UUID, error)
 }

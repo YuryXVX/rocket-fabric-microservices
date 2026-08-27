@@ -15,6 +15,8 @@ import (
 	apiV1 "order/internal/api/order/v1"
 	"order/internal/client/grpc/inventory"
 	"order/internal/client/grpc/payment"
+	"order/internal/repository/order"
+	"order/internal/repository/part"
 	service "order/internal/service/order"
 	orderV1 "shared/pkg/openapi/order/v1"
 	inventoryV1 "shared/pkg/proto/inventory/v1"
@@ -95,10 +97,14 @@ func main() {
 
 	inventoryClient := inventory.New(serviceInventory)
 	paymentClient := payment.New(servicePayment)
+	orderRepository := order.New()
+	partRepository := part.New()
 
 	service := service.New(
 		inventoryClient,
 		paymentClient,
+		orderRepository,
+		partRepository,
 	)
 
 	handler := apiV1.New(service)

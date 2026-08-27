@@ -1,4 +1,4 @@
-package order
+package part
 
 import (
 	"order/internal/repository/record"
@@ -9,11 +9,11 @@ import (
 
 type repository struct {
 	mu    sync.RWMutex
-	store map[uuid.UUID]record.OrderRecord
+	store map[uuid.UUID][]record.PartRecord
 }
 
 func New() *repository {
 	return &repository{
-		store: make(map[uuid.UUID]record.OrderRecord),
+		store: make(map[uuid.UUID][]record.PartRecord),
 	}
 }

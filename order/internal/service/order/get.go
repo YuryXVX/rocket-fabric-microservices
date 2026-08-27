@@ -8,5 +8,19 @@ import (
 )
 
 func (s *service) Get(ctx context.Context, orderUUID uuid.UUID) (model.Order, error) {
-	return model.Order{}, nil
+	items, err := s.partRepository.GetPart(ctx, orderUUID)
+
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	order, err := s.orderRepository.Get(ctx, orderUUID)
+
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	order.OrderItems(items)
+
+	return order, nil
 }

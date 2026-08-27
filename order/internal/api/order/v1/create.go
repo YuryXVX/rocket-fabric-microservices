@@ -7,8 +7,14 @@ import (
 )
 
 func (a *api) CreateOrder(ctx context.Context, req *orderv1.CreateOrderRequest) (orderv1.CreateOrderRes, error) {
-	in := converter.CreteRequestToInput(req)
+	order, err := a.service.Create(ctx, converter.CreteRequestToInput(req))
 
-	a.service.Create(ctx, in)
-	return &orderv1.CreateOrderResponse{}, nil
+	if err != nil {
+		return nil, err
+	}
+
+	return &orderv1.CreateOrderResponse{
+		OrderUUID:  order.UUID,
+		TotalPrice: order.TotalPrice(),
+	}, nil
 }
