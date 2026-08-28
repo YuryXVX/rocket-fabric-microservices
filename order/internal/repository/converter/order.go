@@ -18,10 +18,11 @@ func OrderModelToRecord(in *model.Order) record.OrderRecord {
 
 func RecordOrderToModel(in record.OrderRecord) model.Order {
 	return model.Order{
-		UUID:          in.OrderUUID,
-		Status:        recordStatusToOrderStatus(in.Status),
-		CreatedAt:     in.CreatedAt,
-		PaymentMethod: recordPaymentMethodToModel(in.PaymentMethod),
+		UUID:            in.OrderUUID,
+		Status:          recordStatusToOrderStatus(in.Status),
+		CreatedAt:       in.CreatedAt,
+		TransactionUUID: in.TransactionUUID,
+		PaymentMethod:   recordPaymentMethodToModel(in.PaymentMethod),
 	}
 }
 

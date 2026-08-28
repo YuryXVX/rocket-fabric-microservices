@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"order/internal/api/converter"
 	errs "order/internal/errors"
 
 	orderv1 "shared/pkg/openapi/order/v1"
@@ -22,11 +23,5 @@ func (a *api) GetOrder(ctx context.Context, params orderv1.GetOrderParams) (orde
 		return &orderv1.GetOrderInternalServerError{}, nil
 	}
 
-	return &orderv1.OrderDto{
-		OrderUUID:  order.UUID,
-		Status:     orderv1.OrderStatus(order.Status),
-		HullUUID:   order.HullUUID(),
-		EngineUUID: order.EngineUUID(),
-		TotalPrice: order.TotalPrice(),
-	}, nil
+	return converter.OrderModelToResponse(order), nil
 }
