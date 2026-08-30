@@ -1,18 +1,15 @@
 package inventory
 
 import (
-	"sync"
-
-	"inventory/internal/repository/record"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type repository struct {
-	mu    sync.RWMutex
-	parts map[string]record.Part
+	pool *pgxpool.Pool
 }
 
-func NewRepository() *repository {
+func NewRepository(pool *pgxpool.Pool) *repository {
 	return &repository{
-		parts: createMocks(),
+		pool: pool,
 	}
 }

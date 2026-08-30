@@ -1,11 +1,12 @@
 package converter
 
 import (
-	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"inventory/internal/model"
 	"inventory/internal/service/input"
 	v1 "shared/pkg/proto/inventory/v1"
+
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func ToPartTypeModel(t v1.PartType) model.PartType {
@@ -40,12 +41,14 @@ func RequestToInputPartFilter(req *v1.ListPartsRequest) *input.PartFilter {
 
 func convertModelPartTypeToProto(t model.PartType) v1.PartType {
 	switch t {
-	case model.PartTypeUnspecified:
-		return v1.PartType_PART_TYPE_UNSPECIFIED
+	case model.PartTypeShield:
+		return v1.PartType_PART_TYPE_SHIELD
 	case model.PartTypeEngine:
 		return v1.PartType_PART_TYPE_ENGINE
 	case model.PartTypeHull:
 		return v1.PartType_PART_TYPE_HULL
+	case model.PartTypeWeapon:
+		return v1.PartType_PART_TYPE_WEAPON
 	default:
 		return v1.PartType_PART_TYPE_UNSPECIFIED
 	}

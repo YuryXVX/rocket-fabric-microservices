@@ -1,6 +1,10 @@
 package record
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type PartType int
 
@@ -18,11 +22,12 @@ const (
 )
 
 type Part struct {
-	UUID          string
+	UUID          uuid.UUID
 	Name          string
 	Description   string
 	Price         int64
 	PartType      PartType
 	StockQuantity int
 	CreatedAt     time.Time
+	UpdatedAt     *time.Time
 }

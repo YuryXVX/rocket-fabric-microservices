@@ -12,7 +12,7 @@ import (
 )
 
 func (s *service) Create(ctx context.Context, in *input.CreateOrderInput) (model.Order, error) {
-	items, _ := s.inventoryClient.ListParts(ctx, in.PartUUIDs())
+	items, err := s.inventoryClient.ListParts(ctx, in.PartUUIDs())
 
 	if len(items) == 0 || len(items) != len(in.PartUUIDs()) {
 		return model.Order{}, errs.ErrPartNotFound
@@ -27,13 +27,13 @@ func (s *service) Create(ctx context.Context, in *input.CreateOrderInput) (model
 		CreatedAt:       time.Now(),
 	}
 
-	err := s.orderRepository.Create(ctx, order)
+	err = s.txManager.Do(ctx, func(ctx context.Context) error {
+		if err := s.orderRepository.Create(ctx, order); err != nil {
+			return err
+		}
 
-	if err != nil {
-		return model.Order{}, err
-	}
-
-	err = s.partRepository.SavePart(ctx, order.UUID, order.Items)
+		return s.partRepository.SavePart(ctx, order)
+	})
 
 	if err != nil {
 		return model.Order{}, fmt.Errorf("произошла ошибка при сохранении part %s", order.UUID)

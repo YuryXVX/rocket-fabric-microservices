@@ -6,6 +6,7 @@ import (
 	"fmt"
 	errs "order/internal/errors"
 	"order/internal/model"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -38,6 +39,7 @@ func (s *service) Pay(ctx context.Context, orderUUID uuid.UUID, method model.Pay
 	order.Status = model.OrderStatusPaid
 	order.PaymentMethod = &method
 	order.TransactionUUID = &transactionUUID
+	order.UpdatedAt = time.Now()
 
 	if err := s.orderRepository.Update(ctx, order); err != nil {
 		return uuid.UUID{}, err

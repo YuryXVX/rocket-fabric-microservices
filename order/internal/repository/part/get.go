@@ -2,21 +2,42 @@ package part
 
 import (
 	"context"
+	"fmt"
 	"order/internal/model"
-	"order/internal/repository/converter"
 
 	"github.com/google/uuid"
 )
 
 func (r *repository) GetPart(ctx context.Context, orderUUID uuid.UUID) ([]model.OrderItem, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	var orderItems []model.OrderItem
 
-	items, ok := r.store[orderUUID]
+	rows, err := r.getter.DefaultTrOrDB(ctx, r.pool).Query(
+		ctx,
+		"SELECT * FROM order_items WHERE order_uuid=($1)",
+		orderUUID,
+	)
 
-	if !ok {
-		return []model.OrderItem{}, nil
+	if err != nil {
+		return orderItems, fmt.Errorf("query order failed: %w", err)
 	}
 
-	return converter.RecordItemsToModel(items), nil
+	defer rows.Close()
+
+	for rows.Next() {
+		var o model.OrderItem
+
+		err := rows.Scan(&orderUUID, &o.PartUUID, &o.PartType, &o.Price)
+
+		if err != nil {
+			return nil, fmt.Errorf("scan order failed: %w", err)
+		}
+
+		orderItems = append(orderItems, o)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("итерация завершилась с ошибкой: %w", err)
+	}
+
+	return orderItems, nil
 }

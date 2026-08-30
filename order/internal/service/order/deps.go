@@ -7,6 +7,9 @@ import (
 	"github.com/google/uuid"
 )
 
+type TxManager interface {
+	Do(ctx context.Context, fn func(ctx context.Context) error) error
+}
 type OrderRepository interface {
 	Create(ctx context.Context, order model.Order) error
 	Get(ctx context.Context, orderUUID uuid.UUID) (model.Order, error)
@@ -15,7 +18,7 @@ type OrderRepository interface {
 
 type PartRepository interface {
 	GetPart(ctx context.Context, orderUUID uuid.UUID) ([]model.OrderItem, error)
-	SavePart(ctx context.Context, orderUUID uuid.UUID, items []model.OrderItem) error
+	SavePart(ctx context.Context, order model.Order) error
 }
 
 type InventoryClientGrpc interface {

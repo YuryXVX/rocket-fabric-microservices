@@ -2,10 +2,8 @@ package inventory
 
 import (
 	"context"
-	"slices"
-	"strings"
+	"fmt"
 
-	"github.com/google/uuid"
 	errs "inventory/internal/errors"
 	"inventory/internal/model"
 	"inventory/internal/repository/converter"
@@ -14,71 +12,64 @@ import (
 )
 
 func (r *repository) List(ctx context.Context, input input.PartFilter) ([]*model.Part, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	query := "SELECT uuid, name, description, part_type, price, stock_quantity, created_at, updated_at FROM parts"
 
-	parts := filterByUUID(r.parts, input)
+	var args []interface{}
+
+	if len(input.UUIDs) > 0 {
+		query += " WHERE uuid = ANY($1)"
+		args = append(args, input.UUIDs)
+	} else if input.PartType != "" {
+		query += " WHERE part_type = $1"
+		args = append(args, input.PartType)
+	}
+
+	fmt.Println(args...)
+
+	query += " ORDER BY LOWER(name) ASC"
+
+	rows, err := r.pool.Query(ctx, query, args...)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to query parts: %w", err)
+	}
+
+	defer rows.Close()
+
+	var parts []*model.Part
+
+	for rows.Next() {
+		var p record.Part
+
+		var partTypeStr string
+
+		err := rows.Scan(
+			&p.UUID,
+			&p.Name,
+			&p.Description,
+			&partTypeStr,
+			&p.Price,
+			&p.StockQuantity,
+			&p.CreatedAt,
+			&p.UpdatedAt,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan part: %w", err)
+		}
+
+		p.PartType = converter.ConvertStringToPartType(partTypeStr)
+
+		parts = append(parts, converter.RecordPartToModel(p))
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
 
 	if len(input.UUIDs) > 0 && len(input.UUIDs) != len(parts) {
 		return []*model.Part{}, errs.ErrPartNotFound
 	}
 
 	return parts, nil
-}
-
-func filterByUUID(parts map[string]record.Part, input input.PartFilter) []*model.Part {
-	filtered := make([]*model.Part, 0, len(parts))
-
-	if len(input.UUIDs) > 0 {
-		for _, p := range parts {
-			if slices.Contains(input.UUIDs, uuid.MustParse(p.UUID)) {
-				filtered = append(filtered, converter.RecordPartToModel(p))
-			}
-		}
-
-		return filtered
-	} else if input.PartType != model.PartTypeUnspecified {
-		for _, p := range parts {
-			if p.PartType == converter.ConvertRecordPartType(input.PartType) {
-				filtered = append(filtered, converter.RecordPartToModel(p))
-			}
-		}
-
-		sortByName(&filtered)
-
-		return filtered
-	}
-
-	for _, p := range parts {
-		filtered = append(filtered, converter.RecordPartToModel(p))
-	}
-
-	sortByName(&filtered)
-
-	return filtered
-}
-
-func sortByName(parts *[]*model.Part) {
-	slices.SortFunc(*parts, func(a, b *model.Part) int {
-		if a == nil && b == nil {
-			return 0
-		}
-		if a == nil {
-			return -1
-		}
-		if b == nil {
-			return 1
-		}
-
-		nameA := strings.ToLower(a.Name)
-		nameB := strings.ToLower(b.Name)
-
-		if nameA < nameB {
-			return -1
-		}
-		if nameA > nameB {
-			return 1
-		}
-		return 0
-	})
 }

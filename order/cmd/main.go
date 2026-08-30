@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -24,8 +25,13 @@ import (
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
+	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 )
 
 const (
@@ -66,6 +72,10 @@ func main() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
+	defer cancel()
+
 	if err != nil {
 		slog.Error("произошла ошибка при создании клиента payment", "error", err)
 		return
@@ -92,19 +102,46 @@ func main() {
 		}
 	}()
 
+	err = godotenv.Load("../order.env")
+
+	if err != nil {
+		slog.Error("ошибка загрузки переменных окружения из order.env", "error", err)
+
+		return
+	}
+
+	dbURI := os.Getenv("DB_URI")
+	if dbURI == "" {
+		slog.Error("переменная окружения DB_URI не установлена")
+		return
+	}
+
+	pool, err := pgxpool.New(ctx, dbURI)
+
+	if err != nil {
+		slog.Error("ошибка подключения к БД", "error", err)
+		return
+	}
+	defer pool.Close()
+
+	txManager, err := manager.New(trmpgx.NewDefaultFactory(pool))
+
 	serviceInventory := inventoryV1.NewPartServiceClient(inventoryConn)
 	servicePayment := paymentV1.NewBillingServiceClient(paymentConn)
 
 	inventoryClient := inventory.New(serviceInventory)
 	paymentClient := payment.New(servicePayment)
-	orderRepository := order.New()
-	partRepository := part.New()
+
+	orderRepository := order.New(pool)
+
+	partRepository := part.New(pool)
 
 	service := service.New(
 		inventoryClient,
 		paymentClient,
 		orderRepository,
 		partRepository,
+		txManager,
 	)
 
 	handler := apiV1.New(service)
@@ -123,9 +160,6 @@ func main() {
 		WriteTimeout:      writeTimeout,      // Лимит на запись ответа
 		IdleTimeout:       idleTimeout,       // Таймаут keep-alive соединений
 	}
-
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
 
 	go func() {
 		slog.Info("🚀 старт сервера", "port", httpPort)

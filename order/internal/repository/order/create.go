@@ -2,15 +2,29 @@ package order
 
 import (
 	"context"
+	"fmt"
 	"order/internal/model"
 	"order/internal/repository/converter"
 )
 
 func (r *repository) Create(ctx context.Context, order model.Order) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	rec := converter.OrderModelToRecord(&order)
 
-	r.store[order.UUID] = converter.OrderModelToRecord(&order)
+	_, err := r.getter.
+		DefaultTrOrDB(ctx, r.pool).
+		Exec(ctx,
+			"INSERT INTO orders (uuid, status, transaction_uuid, payment_method, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)",
+			rec.OrderUUID,
+			rec.Status,
+			rec.TransactionUUID,
+			rec.PaymentMethod,
+			rec.CreatedAt,
+			rec.UpdatedAt,
+		)
+
+	if err != nil {
+		return fmt.Errorf("создать заказ: %w", err)
+	}
 
 	return nil
 }

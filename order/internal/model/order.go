@@ -13,6 +13,7 @@ type Order struct {
 	PaymentMethod   *PaymentMethod
 	Status          OrderStatus
 	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // TotalPrice возвращает сумму цен всех позиций заказа.

@@ -5,6 +5,7 @@ type service struct {
 	paymentClient   PaymentClientGrpc
 	orderRepository OrderRepository
 	partRepository  PartRepository
+	txManager       TxManager
 }
 
 func New(
@@ -12,11 +13,13 @@ func New(
 	payment PaymentClientGrpc,
 	orderRepository OrderRepository,
 	partRepository PartRepository,
+	txManager TxManager,
 ) *service {
 	return &service{
 		inventoryClient: inventory,
 		paymentClient:   payment,
 		orderRepository: orderRepository,
 		partRepository:  partRepository,
+		txManager:       txManager,
 	}
 }

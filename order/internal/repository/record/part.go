@@ -3,9 +3,10 @@ package record
 import "github.com/google/uuid"
 
 type PartRecord struct {
-	PartUUID uuid.UUID
-	PartType PartType
-	Price    int64
+	OrderUUID uuid.UUID `db:"order_uuid"`
+	PartUUID  uuid.UUID `db:"part_uuid"`
+	PartType  PartType  `db:"part_type"`
+	Price     int64     `db:"price"`
 }
 
 type PartType string

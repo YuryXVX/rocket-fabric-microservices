@@ -3,13 +3,30 @@ package converter
 import (
 	"order/internal/model"
 	"order/internal/repository/record"
+
+	"github.com/google/uuid"
 )
 
-func OrderItemToRecord(item model.OrderItem) record.PartRecord {
+func OrderItemTypeToRecord(t model.PartType) record.PartType {
+	switch t {
+	case model.PartTypeWeapon:
+		return record.PartTypeWeapon
+	case model.PartTypeEngine:
+		return record.PartTypeEngine
+	case model.PartTypeShield:
+		return record.PartTypeShield
+	case model.PartTypeHull:
+		return record.PartTypeHull
+	default:
+		return record.PartTypeUnspecified
+	}
+}
+
+func OrderItemToRecord(item model.OrderItem, orderUUID uuid.UUID) record.PartRecord {
 	return record.PartRecord{
 		PartUUID: item.PartUUID,
 		Price:    item.Price,
-		PartType: record.PartType(item.PartType),
+		PartType: OrderItemTypeToRecord(item.PartType),
 	}
 }
 
@@ -21,11 +38,11 @@ func RecordItemToModel(item record.PartRecord) model.OrderItem {
 	}
 }
 
-func OrderItemsToRecords(orderItems []model.OrderItem) []record.PartRecord {
+func OrderItemsToRecords(orderItems []model.OrderItem, orderUUID uuid.UUID) []record.PartRecord {
 	r := make([]record.PartRecord, 0, len(orderItems))
 
 	for _, item := range orderItems {
-		r = append(r, OrderItemToRecord(item))
+		r = append(r, OrderItemToRecord(item, orderUUID))
 	}
 
 	return r

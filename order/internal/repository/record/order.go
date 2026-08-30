@@ -7,12 +7,12 @@ import (
 )
 
 type OrderRecord struct {
-	OrderUUID       uuid.UUID
-	TotalPrice      int64
-	TransactionUUID *uuid.UUID
-	PaymentMethod   *PaymentMethod
-	Status          OrderStatus
-	CreatedAt       time.Time
+	OrderUUID       uuid.UUID      `db:"uuid"`
+	Status          OrderStatus    `db:"status"`
+	TransactionUUID *uuid.UUID     `db:"transaction_uuid"`
+	PaymentMethod   *PaymentMethod `db:"payment_method"`
+	CreatedAt       time.Time      `db:"created_at"`
+	UpdatedAt       *time.Time     `db:"updated_at"` // Добавлено из SQL-схемы
 }
 
 type OrderStatus string

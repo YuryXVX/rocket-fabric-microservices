@@ -10,7 +10,6 @@ func OrderModelToRecord(in *model.Order) record.OrderRecord {
 		OrderUUID:       in.UUID,
 		CreatedAt:       in.CreatedAt,
 		TransactionUUID: in.TransactionUUID,
-		TotalPrice:      in.TotalPrice(),
 		Status:          orderStatusToRecordStatus(in.Status),
 		PaymentMethod:   paymentMethodToRecord(in.PaymentMethod),
 	}

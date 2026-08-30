@@ -2,21 +2,31 @@ package inventory
 
 import (
 	"context"
+	"fmt"
 
-	errs "inventory/internal/errors"
 	"inventory/internal/model"
-	"inventory/internal/repository/converter"
 )
 
 func (r *repository) Get(ctx context.Context, uuid string) (*model.Part, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	var part model.Part
 
-	part, ok := r.parts[uuid]
+	row := r.pool.QueryRow(ctx, "SELECT * FROM parts WHERE uuid = $1", uuid)
 
-	if !ok {
-		return nil, errs.ErrPartNotFound
+	err := row.Scan(
+		&part.UUID,
+		&part.Name,
+		&part.Description,
+		&part.PartType,
+		&part.Price,
+		&part.StockQuantity,
+		&part.CreatedAt,
+		&part.UpdatedAt,
+	)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
 	}
 
-	return converter.RecordPartToModel(part), nil
+	return &part, nil
 }

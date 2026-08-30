@@ -1,7 +1,6 @@
 package converter
 
 import (
-	"github.com/google/uuid"
 	"inventory/internal/model"
 	"inventory/internal/repository/record"
 )
@@ -38,9 +37,24 @@ func ConvertRecordPartType(t model.PartType) record.PartType {
 	}
 }
 
+func ConvertStringToPartType(t string) record.PartType {
+	switch t {
+	case "HULL":
+		return record.PartTypeHull
+	case "ENGINE":
+		return record.PartTypeEngine
+	case "SHIELD":
+		return record.PartTypeShield
+	case "WEAPON":
+		return record.PartTypeWeapon
+	default:
+		return record.PartTypeUnspecified
+	}
+}
+
 func RecordPartToModel(record record.Part) *model.Part {
 	return &model.Part{
-		UUID:          uuid.MustParse(record.UUID),
+		UUID:          record.UUID,
 		Name:          record.Name,
 		Description:   record.Description,
 		Price:         record.Price,

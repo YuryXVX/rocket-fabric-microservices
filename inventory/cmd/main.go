@@ -4,17 +4,21 @@ import (
 	"context"
 	"log/slog"
 	"net"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/reflection"
 	api "inventory/internal/api/inventory/v1"
 	repository "inventory/internal/repository/inventory"
 	service "inventory/internal/service/inventory"
 	v1 "shared/pkg/proto/inventory/v1"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -31,12 +35,39 @@ var (
 )
 
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	lis, err := net.Listen("tcp", grpcAddress)
+
 	if err != nil {
 		slog.Error("ошибка запуска слушателя", "error", err)
 
 		return
 	}
+
+	err = godotenv.Load("../../inventory.env")
+
+	if err != nil {
+		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)
+
+		return
+	}
+
+	dbURI := os.Getenv("DB_URI")
+
+	if dbURI == "" {
+		slog.Error("переменная окружения DB_URI не установлена")
+		return
+	}
+
+	pool, err := pgxpool.New(ctx, dbURI)
+
+	if err != nil {
+		slog.Error("ошибка подключения к БД", "error", err)
+		return
+	}
+	defer pool.Close()
 
 	s := grpc.NewServer(
 		grpc.KeepaliveParams(keepalive.ServerParameters{
@@ -52,16 +83,13 @@ func main() {
 		}),
 	)
 
-	repository := repository.NewRepository()
+	repository := repository.NewRepository(pool)
 	service := service.NewService(repository)
 	api := api.New(service)
 
 	v1.RegisterPartServiceServer(s, api)
 
 	reflection.Register(s)
-
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
 
 	go func() {
 		slog.Info("🚀 gRPC сервер запущен", "address", grpcAddress)
