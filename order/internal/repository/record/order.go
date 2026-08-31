@@ -12,7 +12,8 @@ type OrderRecord struct {
 	TransactionUUID *uuid.UUID     `db:"transaction_uuid"`
 	PaymentMethod   *PaymentMethod `db:"payment_method"`
 	CreatedAt       time.Time      `db:"created_at"`
-	UpdatedAt       *time.Time     `db:"updated_at"` // Добавлено из SQL-схемы
+	UpdatedAt       *time.Time     `db:"updated_at"`
+	Items           []PartRecord
 }
 
 type OrderStatus string

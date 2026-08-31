@@ -9,11 +9,13 @@ import (
 type repository struct {
 	getter *trmpgx.CtxGetter
 	pool   *pgxpool.Pool
+	tx     TxManager
 }
 
-func New(pool *pgxpool.Pool) *repository {
+func New(pool *pgxpool.Pool, tx TxManager) *repository {
 	return &repository{
 		pool:   pool,
 		getter: trmpgx.DefaultCtxGetter,
+		tx:     tx,
 	}
 }

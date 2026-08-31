@@ -17,7 +17,6 @@ import (
 	"order/internal/client/grpc/inventory"
 	"order/internal/client/grpc/payment"
 	"order/internal/repository/order"
-	"order/internal/repository/part"
 	service "order/internal/service/order"
 	orderV1 "shared/pkg/openapi/order/v1"
 	inventoryV1 "shared/pkg/proto/inventory/v1"
@@ -132,16 +131,12 @@ func main() {
 	inventoryClient := inventory.New(serviceInventory)
 	paymentClient := payment.New(servicePayment)
 
-	orderRepository := order.New(pool)
-
-	partRepository := part.New(pool)
+	orderRepository := order.New(pool, txManager)
 
 	service := service.New(
 		inventoryClient,
 		paymentClient,
 		orderRepository,
-		partRepository,
-		txManager,
 	)
 
 	handler := apiV1.New(service)
@@ -155,10 +150,10 @@ func main() {
 	server := &http.Server{
 		Addr:              net.JoinHostPort("localhost", httpPort),
 		Handler:           r,
-		ReadHeaderTimeout: readHeaderTimeout, // Защита от Slowloris атаки
-		ReadTimeout:       readTimeout,       // Лимит на чтение всего запроса
-		WriteTimeout:      writeTimeout,      // Лимит на запись ответа
-		IdleTimeout:       idleTimeout,       // Таймаут keep-alive соединений
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 
 	go func() {

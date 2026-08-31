@@ -14,6 +14,10 @@ import (
 func (s *service) Create(ctx context.Context, in *input.CreateOrderInput) (model.Order, error) {
 	items, err := s.inventoryClient.ListParts(ctx, in.PartUUIDs())
 
+	if err != nil {
+		return model.Order{}, fmt.Errorf("получение детали %s", err.Error())
+	}
+
 	if len(items) == 0 || len(items) != len(in.PartUUIDs()) {
 		return model.Order{}, errs.ErrPartNotFound
 	}
@@ -27,16 +31,9 @@ func (s *service) Create(ctx context.Context, in *input.CreateOrderInput) (model
 		CreatedAt:       time.Now(),
 	}
 
-	err = s.txManager.Do(ctx, func(ctx context.Context) error {
-		if err := s.orderRepository.Create(ctx, order); err != nil {
-			return err
-		}
+	if err := s.orderRepository.Create(ctx, order); err != nil {
+		return model.Order{}, fmt.Errorf("сохранение заказа %s", order.UUID)
 
-		return s.partRepository.SavePart(ctx, order)
-	})
-
-	if err != nil {
-		return model.Order{}, fmt.Errorf("произошла ошибка при сохранении part %s", order.UUID)
 	}
 
 	return order, nil

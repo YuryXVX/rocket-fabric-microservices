@@ -1,4 +1,4 @@
-package part
+package order
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (r *repository) SavePart(ctx context.Context, order model.Order) error {
+func (r *repository) createItems(ctx context.Context, order model.Order) error {
 	if len(order.Items) == 0 {
 		return nil
 	}

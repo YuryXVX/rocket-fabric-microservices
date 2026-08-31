@@ -41,8 +41,8 @@ func (s *service) Pay(ctx context.Context, orderUUID uuid.UUID, method model.Pay
 	order.TransactionUUID = &transactionUUID
 	order.UpdatedAt = time.Now()
 
-	if err := s.orderRepository.Update(ctx, order); err != nil {
-		return uuid.UUID{}, err
+	if err = s.orderRepository.Update(ctx, order); err != nil {
+		return uuid.UUID{}, fmt.Errorf("при оплате %s", orderUUID)
 	}
 
 	return transactionUUID, nil

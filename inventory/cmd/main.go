@@ -46,7 +46,7 @@ func main() {
 		return
 	}
 
-	err = godotenv.Load("../../inventory.env")
+	err = godotenv.Load("../inventory.env")
 
 	if err != nil {
 		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)

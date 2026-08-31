@@ -16,13 +16,22 @@ func OrderModelToRecord(in *model.Order) record.OrderRecord {
 }
 
 func RecordOrderToModel(in record.OrderRecord) model.Order {
-	return model.Order{
+	m := model.Order{
 		UUID:            in.OrderUUID,
 		Status:          recordStatusToOrderStatus(in.Status),
 		CreatedAt:       in.CreatedAt,
 		TransactionUUID: in.TransactionUUID,
 		PaymentMethod:   recordPaymentMethodToModel(in.PaymentMethod),
 	}
+
+	if len(in.Items) > 0 {
+		for _, item := range in.Items {
+			m.Items = append(m.Items, RecordItemToModel(item))
+
+		}
+	}
+
+	return m
 }
 
 func orderStatusToRecordStatus(in model.OrderStatus) record.OrderStatus {

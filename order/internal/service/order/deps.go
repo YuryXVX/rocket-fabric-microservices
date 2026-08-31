@@ -7,9 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type TxManager interface {
-	Do(ctx context.Context, fn func(ctx context.Context) error) error
-}
 type OrderRepository interface {
 	Create(ctx context.Context, order model.Order) error
 	Get(ctx context.Context, orderUUID uuid.UUID) (model.Order, error)
