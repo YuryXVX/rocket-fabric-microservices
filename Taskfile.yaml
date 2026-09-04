@@ -22,7 +22,7 @@ vars:
   GOFUMPT: "{{.BIN_DIR}}/gofumpt"
   GOOSE: "{{.BIN_DIR}}/goose"
 
-  MODULES: order payment inventory shared
+  MODULES: order payment inventory shared platform
 tasks:
   goose:install:
     desc: "Устанавливает goose (миграции БД)"
