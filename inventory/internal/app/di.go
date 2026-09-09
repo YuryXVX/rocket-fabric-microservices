@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"plaform/pkg/closer"
+	"plaform/pkg/di"
 	v1 "shared/pkg/proto/inventory/v1"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,17 +17,17 @@ import (
 
 type diContainer struct {
 	// poll
-	pgPool *pgxpool.Pool
+	pgPool di.Value[*pgxpool.Pool]
 	// repository
-	inventoryRepository serviceInventory.InventoryRepository
+	inventoryRepository di.Value[serviceInventory.InventoryRepository]
 	// service
-	inventoryService apiV1.ServiceInventory
+	inventoryService di.Value[apiV1.ServiceInventory]
 	// handlers
-	inventoryHandlers v1.PartServiceServer
+	inventoryHandlers di.Value[v1.PartServiceServer]
 }
 
 func (di *diContainer) PgPoll(ctx context.Context) *pgxpool.Pool {
-	if di.pgPool == nil {
+	return di.pgPool.Get(ctx, func(ctx context.Context) *pgxpool.Pool {
 		dbURI := os.Getenv("DB_URI")
 
 		if dbURI == "" {
@@ -53,33 +54,24 @@ func (di *diContainer) PgPoll(ctx context.Context) *pgxpool.Pool {
 			return nil
 		})
 
-		di.pgPool = pool
-
-	}
-
-	return di.pgPool
+		return pool
+	})
 }
 
 func (di *diContainer) InventoryRepository(ctx context.Context) inventory.InventoryRepository {
-	if di.inventoryRepository == nil {
-		di.inventoryRepository = repositoryInventory.NewRepository(di.PgPoll(ctx))
-	}
-
-	return di.inventoryRepository
+	return di.inventoryRepository.Get(ctx, func(ctx context.Context) serviceInventory.InventoryRepository {
+		return repositoryInventory.NewRepository(di.PgPoll(ctx))
+	})
 }
 
 func (di *diContainer) InventoryService(ctx context.Context) apiV1.ServiceInventory {
-	if di.inventoryService == nil {
-		di.inventoryService = serviceInventory.NewService(di.InventoryRepository(ctx))
-	}
-
-	return di.inventoryService
+	return di.inventoryService.Get(ctx, func(ctx context.Context) apiV1.ServiceInventory {
+		return serviceInventory.NewService(di.InventoryRepository(ctx))
+	})
 }
 
 func (di *diContainer) InventoryHandlers(ctx context.Context) v1.PartServiceServer {
-	if di.inventoryHandlers == nil {
-		di.inventoryHandlers = apiV1.New(di.InventoryService(ctx))
-	}
-
-	return di.inventoryHandlers
+	return di.inventoryHandlers.Get(ctx, func(ctx context.Context) v1.PartServiceServer {
+		return apiV1.New(di.InventoryService(ctx))
+	})
 }
