@@ -19,8 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PartService_GetPartByUUID_FullMethodName = "/inventory.v1.PartService/GetPartByUUID"
-	PartService_ListParts_FullMethodName     = "/inventory.v1.PartService/ListParts"
+	PartService_GetPartByUUID_FullMethodName         = "/inventory.v1.PartService/GetPartByUUID"
+	PartService_ListParts_FullMethodName             = "/inventory.v1.PartService/ListParts"
+	PartService_ValidateCompatibility_FullMethodName = "/inventory.v1.PartService/ValidateCompatibility"
+	PartService_ReserveParts_FullMethodName          = "/inventory.v1.PartService/ReserveParts"
+	PartService_ReleaseParts_FullMethodName          = "/inventory.v1.PartService/ReleaseParts"
 )
 
 // PartServiceClient is the client API for PartService service.
@@ -39,6 +42,12 @@ type PartServiceClient interface {
 	// - NOT_FOUND: Одна или несколько деталей из uuids не найдены
 	// - INVALID_ARGUMENT: Невалидный формат UUID в списке uuids
 	ListParts(ctx context.Context, in *ListPartsRequest, opts ...grpc.CallOption) (*ListPartsResponse, error)
+	// ValidateCompatibility проверяет совместимость деталей между собой
+	ValidateCompatibility(ctx context.Context, in *ValidateCompatibilityRequest, opts ...grpc.CallOption) (*ValidateCompatibilityResponse, error)
+	// ReserveParts резервирует детали для заказа
+	ReserveParts(ctx context.Context, in *ReservePartsRequest, opts ...grpc.CallOption) (*ReservePartsResponse, error)
+	// ReleaseParts освобождает ранее зарезервированные детали
+	ReleaseParts(ctx context.Context, in *ReleasePartsRequest, opts ...grpc.CallOption) (*ReleasePartsResponse, error)
 }
 
 type partServiceClient struct {
@@ -69,6 +78,36 @@ func (c *partServiceClient) ListParts(ctx context.Context, in *ListPartsRequest,
 	return out, nil
 }
 
+func (c *partServiceClient) ValidateCompatibility(ctx context.Context, in *ValidateCompatibilityRequest, opts ...grpc.CallOption) (*ValidateCompatibilityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ValidateCompatibilityResponse)
+	err := c.cc.Invoke(ctx, PartService_ValidateCompatibility_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *partServiceClient) ReserveParts(ctx context.Context, in *ReservePartsRequest, opts ...grpc.CallOption) (*ReservePartsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReservePartsResponse)
+	err := c.cc.Invoke(ctx, PartService_ReserveParts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *partServiceClient) ReleaseParts(ctx context.Context, in *ReleasePartsRequest, opts ...grpc.CallOption) (*ReleasePartsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReleasePartsResponse)
+	err := c.cc.Invoke(ctx, PartService_ReleaseParts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PartServiceServer is the server API for PartService service.
 // All implementations must embed UnimplementedPartServiceServer
 // for forward compatibility.
@@ -85,6 +124,12 @@ type PartServiceServer interface {
 	// - NOT_FOUND: Одна или несколько деталей из uuids не найдены
 	// - INVALID_ARGUMENT: Невалидный формат UUID в списке uuids
 	ListParts(context.Context, *ListPartsRequest) (*ListPartsResponse, error)
+	// ValidateCompatibility проверяет совместимость деталей между собой
+	ValidateCompatibility(context.Context, *ValidateCompatibilityRequest) (*ValidateCompatibilityResponse, error)
+	// ReserveParts резервирует детали для заказа
+	ReserveParts(context.Context, *ReservePartsRequest) (*ReservePartsResponse, error)
+	// ReleaseParts освобождает ранее зарезервированные детали
+	ReleaseParts(context.Context, *ReleasePartsRequest) (*ReleasePartsResponse, error)
 	mustEmbedUnimplementedPartServiceServer()
 }
 
@@ -100,6 +145,15 @@ func (UnimplementedPartServiceServer) GetPartByUUID(context.Context, *GetPartByU
 }
 func (UnimplementedPartServiceServer) ListParts(context.Context, *ListPartsRequest) (*ListPartsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListParts not implemented")
+}
+func (UnimplementedPartServiceServer) ValidateCompatibility(context.Context, *ValidateCompatibilityRequest) (*ValidateCompatibilityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ValidateCompatibility not implemented")
+}
+func (UnimplementedPartServiceServer) ReserveParts(context.Context, *ReservePartsRequest) (*ReservePartsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReserveParts not implemented")
+}
+func (UnimplementedPartServiceServer) ReleaseParts(context.Context, *ReleasePartsRequest) (*ReleasePartsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReleaseParts not implemented")
 }
 func (UnimplementedPartServiceServer) mustEmbedUnimplementedPartServiceServer() {}
 func (UnimplementedPartServiceServer) testEmbeddedByValue()                     {}
@@ -158,6 +212,60 @@ func _PartService_ListParts_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PartService_ValidateCompatibility_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ValidateCompatibilityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartServiceServer).ValidateCompatibility(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartService_ValidateCompatibility_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartServiceServer).ValidateCompatibility(ctx, req.(*ValidateCompatibilityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PartService_ReserveParts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReservePartsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartServiceServer).ReserveParts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartService_ReserveParts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartServiceServer).ReserveParts(ctx, req.(*ReservePartsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PartService_ReleaseParts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleasePartsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartServiceServer).ReleaseParts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartService_ReleaseParts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartServiceServer).ReleaseParts(ctx, req.(*ReleasePartsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PartService_ServiceDesc is the grpc.ServiceDesc for PartService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -172,6 +280,18 @@ var PartService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListParts",
 			Handler:    _PartService_ListParts_Handler,
+		},
+		{
+			MethodName: "ValidateCompatibility",
+			Handler:    _PartService_ValidateCompatibility_Handler,
+		},
+		{
+			MethodName: "ReserveParts",
+			Handler:    _PartService_ReserveParts_Handler,
+		},
+		{
+			MethodName: "ReleaseParts",
+			Handler:    _PartService_ReleaseParts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
