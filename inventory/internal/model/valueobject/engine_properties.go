@@ -13,12 +13,17 @@ const (
 )
 
 type engineProperties struct {
-	class EngineClass
+	class            EngineClass
+	requiredStrength int
 }
 
-func NewEngineProperties(engineClass EngineClass) (*PartProperties, error) {
+func NewEngineProperties(engineClass EngineClass, requiredStrength int) (*PartProperties, error) {
 	if engineClass == "" {
 		return nil, fmt.Errorf("engine class cannot be empty")
+	}
+
+	if requiredStrength <= 0 {
+		return nil, fmt.Errorf("required strength must be positive, got %d", requiredStrength)
 	}
 
 	switch engineClass {
@@ -29,9 +34,11 @@ func NewEngineProperties(engineClass EngineClass) (*PartProperties, error) {
 
 	return &PartProperties{
 		engine: &engineProperties{
-			class: engineClass,
+			class:            engineClass,
+			requiredStrength: requiredStrength,
 		},
 	}, nil
 }
 
-func (e *engineProperties) Class() EngineClass { return e.class }
+func (e *engineProperties) Class() EngineClass    { return e.class }
+func (e *engineProperties) RequiredStrength() int { return e.requiredStrength }

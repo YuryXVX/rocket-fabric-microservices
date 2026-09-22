@@ -1,5 +1,10 @@
 package valueobject
 
+import (
+	"fmt"
+	errs "inventory/internal/errors"
+)
+
 type PartType string
 
 const (
@@ -9,3 +14,13 @@ const (
 	PartTypeShield      PartType = "SHIELD"
 	PartTypeWeapon      PartType = "WEAPON"
 )
+
+func NewPartType(s string) (PartType, error) {
+	pt := PartType(s)
+	switch pt {
+	case PartTypeHull, PartTypeEngine, PartTypeShield, PartTypeWeapon:
+		return pt, nil
+	default:
+		return "", fmt.Errorf("неизвестный тип детали %q: %w", s, errs.ErrInvalidProperties)
+	}
+}
