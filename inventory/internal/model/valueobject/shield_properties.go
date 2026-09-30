@@ -1,6 +1,8 @@
 package valueobject
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type ShieldProperties = shieldProperties
 
@@ -16,13 +18,6 @@ type shieldProperties struct {
 }
 
 func (s *shieldProperties) ShieldType() ShieldType { return s.shieldType }
-
-// energy + laser — ок
-// plasma + missile — ок
-// energy + missile — ок
-func (s *shieldProperties) CanSupport(e *WeaponProperties) bool {
-	return false
-}
 
 func NewShieldProperties(shieldType ShieldType) (*PartProperties, error) {
 	switch shieldType {

@@ -58,11 +58,14 @@ func (c *CompatibilityChecker) checkShield(ps partsSet) error {
 		return nil
 	}
 
-	if !ps.shield.CanSupport(ps.weapon) {
+	switch {
+	case ps.shield.ShieldType() == valueobject.ShieldEnergy && ps.weapon.WeaponType() == valueobject.WeaponLaserType,
+		ps.shield.ShieldType() == valueobject.ShieldPlasma && ps.weapon.WeaponType() == valueobject.WeaponMissile,
+		ps.shield.ShieldType() == valueobject.ShieldEnergy && ps.weapon.WeaponType() == valueobject.WeaponMissile:
+		return nil
+	default:
 		return errs.ErrIncompatibleShield
 	}
-
-	return nil
 }
 
 func (c *CompatibilityChecker) extractParts(parts []entity.Part) partsSet {
