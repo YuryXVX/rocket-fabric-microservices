@@ -6,28 +6,15 @@ import (
 	"github.com/google/uuid"
 )
 
-type PartType int
-
-const (
-	// PartTypeUnspecified — не указан (дефолтное значение)
-	PartTypeUnspecified PartType = iota // 0
-	// PartTypeHull — корпус корабля
-	PartTypeHull // 1
-	// PartTypeEngine — двигатель
-	PartTypeEngine // 2
-	// PartTypeShield — защитный щит
-	PartTypeShield // 3
-	// PartTypeWeapon — вооружение
-	PartTypeWeapon // 4
-)
-
 type Part struct {
 	UUID          uuid.UUID
 	Name          string
 	Description   string
+	PartType      string
 	Price         int64
-	PartType      PartType
-	StockQuantity int
+	StockQuantity int64
+	Reserved      int64
+	Properties    []byte
 	CreatedAt     time.Time
 	UpdatedAt     *time.Time
 }

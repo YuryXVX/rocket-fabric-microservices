@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	errs "inventory/internal/errors"
-	"inventory/internal/model"
+	"inventory/internal/model/entity"
 	"inventory/internal/repository/converter"
 	"inventory/internal/repository/record"
 	"inventory/internal/service/input"
 )
 
-func (r *repository) List(ctx context.Context, input input.PartFilter) ([]*model.Part, error) {
-	query := "SELECT uuid, name, description, part_type, price, stock_quantity, created_at, updated_at FROM parts"
+func (r *repository) List(ctx context.Context, input input.PartFilter) ([]*entity.Part, error) {
+	query := "SELECT uuid, properties, name, description, part_type, price, stock_quantity, created_at, updated_at FROM parts"
 
 	var args []interface{}
 
@@ -36,18 +36,17 @@ func (r *repository) List(ctx context.Context, input input.PartFilter) ([]*model
 
 	defer rows.Close()
 
-	var parts []*model.Part
+	var parts []*entity.Part
 
 	for rows.Next() {
 		var p record.Part
 
-		var partTypeStr string
-
 		err := rows.Scan(
 			&p.UUID,
+			&p.Properties,
 			&p.Name,
 			&p.Description,
-			&partTypeStr,
+			&p.PartType,
 			&p.Price,
 			&p.StockQuantity,
 			&p.CreatedAt,
@@ -58,9 +57,13 @@ func (r *repository) List(ctx context.Context, input input.PartFilter) ([]*model
 			return nil, fmt.Errorf("failed to scan part: %w", err)
 		}
 
-		p.PartType = converter.ConvertStringToPartType(partTypeStr)
+		part, err := converter.RecordPartToDomain(p)
 
-		parts = append(parts, converter.RecordPartToModel(p))
+		if err != nil {
+			return nil, err
+		}
+
+		parts = append(parts, &part)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -68,7 +71,7 @@ func (r *repository) List(ctx context.Context, input input.PartFilter) ([]*model
 	}
 
 	if len(input.UUIDs) > 0 && len(input.UUIDs) != len(parts) {
-		return []*model.Part{}, errs.ErrPartNotFound
+		return []*entity.Part{}, errs.ErrPartNotFound
 	}
 
 	return parts, nil

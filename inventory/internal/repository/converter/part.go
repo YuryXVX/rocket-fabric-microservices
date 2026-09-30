@@ -1,56 +1,13 @@
 package converter
 
 import (
+	"encoding/json"
+	"fmt"
 	"inventory/internal/model"
-	"inventory/internal/repository/record"
+	"inventory/internal/model/entity"
+	"inventory/internal/model/valueobject"
+	record "inventory/internal/repository/record"
 )
-
-func ConvertPartType(t record.PartType) model.PartType {
-	switch t {
-	case record.PartTypeUnspecified:
-		return model.PartTypeUnspecified
-	case record.PartTypeHull:
-		return model.PartTypeHull
-	case record.PartTypeEngine:
-		return model.PartTypeEngine
-	case record.PartTypeShield:
-		return model.PartTypeShield
-	case record.PartTypeWeapon:
-		return model.PartTypeWeapon
-	default:
-		return model.PartTypeUnspecified
-	}
-}
-
-func ConvertRecordPartType(t model.PartType) record.PartType {
-	switch t {
-	case model.PartTypeHull:
-		return record.PartTypeHull
-	case model.PartTypeEngine:
-		return record.PartTypeEngine
-	case model.PartTypeShield:
-		return record.PartTypeShield
-	case model.PartTypeWeapon:
-		return record.PartTypeWeapon
-	default:
-		return record.PartTypeUnspecified
-	}
-}
-
-func ConvertStringToPartType(t string) record.PartType {
-	switch t {
-	case "HULL":
-		return record.PartTypeHull
-	case "ENGINE":
-		return record.PartTypeEngine
-	case "SHIELD":
-		return record.PartTypeShield
-	case "WEAPON":
-		return record.PartTypeWeapon
-	default:
-		return record.PartTypeUnspecified
-	}
-}
 
 func RecordPartToModel(record record.Part) *model.Part {
 	return &model.Part{
@@ -58,8 +15,55 @@ func RecordPartToModel(record record.Part) *model.Part {
 		Name:          record.Name,
 		Description:   record.Description,
 		Price:         record.Price,
-		PartType:      ConvertPartType(record.PartType),
+		PartType:      "",
 		StockQuantity: int64(record.StockQuantity),
 		CreatedAt:     record.CreatedAt,
+	}
+}
+
+func RecordPartToDomain(rec record.Part) (entity.Part, error) {
+	var partProps record.PartPropertiesRecord
+
+	if err := json.Unmarshal(rec.Properties, &partProps); err != nil {
+		return entity.Part{}, fmt.Errorf("десериализовать свойства: %w", err)
+	}
+
+	partType, err := valueobject.NewPartType(rec.PartType)
+
+	if err != nil {
+		return entity.Part{}, fmt.Errorf("получение типа детали %v", &err)
+	}
+
+	props, err := partPropertiesFromRecord(partProps)
+
+	if err != nil {
+		return entity.Part{}, fmt.Errorf("десериализация свойства в доменную модель %v", &err)
+	}
+
+	return entity.RestorePart(
+		rec.UUID,
+		rec.Name,
+		rec.Description,
+		&partType,
+		rec.Price,
+		rec.StockQuantity,
+		rec.Reserved,
+		props,
+		rec.CreatedAt,
+	), nil
+}
+
+func partPropertiesFromRecord(rec record.PartPropertiesRecord) (*valueobject.PartProperties, error) {
+	switch {
+	case rec.Hull != nil:
+		return valueobject.NewHullProperties(rec.Hull.Strength)
+	case rec.Engine != nil:
+		return valueobject.NewEngineProperties(valueobject.EngineClass(rec.Engine.Class), rec.Engine.RequiredStrength)
+	case rec.Shield != nil:
+		return valueobject.NewShieldProperties(valueobject.ShieldType(rec.Shield.ShieldType))
+	case rec.Weapon != nil:
+		return valueobject.NewWeaponProperties(valueobject.WeaponType(rec.Weapon.WeaponType))
+	default:
+		return &valueobject.PartProperties{}, nil
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	apiV1 "inventory/internal/api/inventory/v1"
 	repositoryInventory "inventory/internal/repository/inventory"
+	"inventory/internal/service/domain"
 	"inventory/internal/service/inventory"
 	serviceInventory "inventory/internal/service/inventory"
 	"log/slog"
@@ -24,6 +25,8 @@ type diContainer struct {
 	inventoryService di.Value[apiV1.ServiceInventory]
 	// handlers
 	inventoryHandlers di.Value[v1.PartServiceServer]
+	// domain service checker part
+	compatibilityPartChecker di.Value[serviceInventory.CompatibilityChecker]
 }
 
 func (di *diContainer) PgPoll(ctx context.Context) *pgxpool.Pool {
@@ -66,12 +69,18 @@ func (di *diContainer) InventoryRepository(ctx context.Context) inventory.Invent
 
 func (di *diContainer) InventoryService(ctx context.Context) apiV1.ServiceInventory {
 	return di.inventoryService.Get(ctx, func(ctx context.Context) apiV1.ServiceInventory {
-		return serviceInventory.NewService(di.InventoryRepository(ctx))
+		return serviceInventory.NewService(di.InventoryRepository(ctx), di.CompatibilityChecker(ctx))
 	})
 }
 
 func (di *diContainer) InventoryHandlers(ctx context.Context) v1.PartServiceServer {
 	return di.inventoryHandlers.Get(ctx, func(ctx context.Context) v1.PartServiceServer {
 		return apiV1.New(di.InventoryService(ctx))
+	})
+}
+
+func (di *diContainer) CompatibilityChecker(ctx context.Context) serviceInventory.CompatibilityChecker {
+	return di.compatibilityPartChecker.Get(ctx, func(ctx context.Context) serviceInventory.CompatibilityChecker {
+		return domain.New()
 	})
 }

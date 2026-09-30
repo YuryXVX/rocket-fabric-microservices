@@ -15,6 +15,8 @@ type weaponProperties struct {
 	weaponType WeaponType
 }
 
+func (w *weaponProperties) WeaponType() WeaponType { return w.weaponType }
+
 func NewWeaponProperties(weaponType WeaponType) (*PartProperties, error) {
 	switch weaponType {
 	case WeaponLaserType, WeaponMissile:

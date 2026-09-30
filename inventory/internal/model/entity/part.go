@@ -75,3 +75,5 @@ func (p *part) CreatedAt() time.Time { return p.createdAt }
 func (p *part) Reserved() int64 { return p.reserved }
 
 func (p *part) Available() int64 { return p.stockQuantity - p.reserved }
+
+func (p *part) Properties() *valueobject.PartProperties { return p.properties }

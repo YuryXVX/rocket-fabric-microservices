@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"inventory/internal/api/converter"
 	errs "inventory/internal/errors"
 	v1 "shared/pkg/proto/inventory/v1"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (a *api) GetPartByUUID(ctx context.Context, req *v1.GetPartByUUIDRequest) (*v1.GetPartByUUIDResponse, error) {
@@ -16,7 +16,7 @@ func (a *api) GetPartByUUID(ctx context.Context, req *v1.GetPartByUUIDRequest) (
 		return nil, status.Error(codes.InvalidArgument, "uuid обязателен")
 	}
 
-	part, err := a.serviceInventory.Get(ctx, req.Uuid)
+	_, err := a.serviceInventory.Get(ctx, req.Uuid)
 	if err != nil {
 		if errors.Is(err, errs.ErrInvalidUUID) {
 			return nil, status.Errorf(codes.InvalidArgument, "UUID %s не правильного формата", req.GetUuid())
@@ -30,6 +30,6 @@ func (a *api) GetPartByUUID(ctx context.Context, req *v1.GetPartByUUIDRequest) (
 	}
 
 	return &v1.GetPartByUUIDResponse{
-		Part: converter.ModelPartToProtoPart(part),
+		// Part: converter.ModelPartToProtoPart(part),
 	}, nil
 }
