@@ -12,6 +12,9 @@ import (
 	"plaform/pkg/di"
 	v1 "shared/pkg/proto/inventory/v1"
 
+	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
+	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -26,6 +29,8 @@ type diContainer struct {
 	inventoryHandlers di.Value[v1.PartServiceServer]
 	// domain service checker part
 	compatibilityPartChecker di.Value[application.CompatibilityChecker]
+	// tx manager
+	txManager di.Value[application.TxManager]
 }
 
 func (di *diContainer) PgPoll(ctx context.Context) *pgxpool.Pool {
@@ -68,7 +73,11 @@ func (di *diContainer) InventoryRepository(ctx context.Context) application.Inve
 
 func (di *diContainer) ApplicationService(ctx context.Context) apiV1.ApplicationService {
 	return di.applicationService.Get(ctx, func(ctx context.Context) apiV1.ApplicationService {
-		return application.NewService(di.InventoryRepository(ctx), di.CompatibilityChecker(ctx))
+		return application.NewService(
+			di.InventoryRepository(ctx),
+			di.CompatibilityChecker(ctx),
+			di.TxManager(ctx),
+		)
 	})
 }
 
@@ -81,5 +90,18 @@ func (di *diContainer) InventoryHandlers(ctx context.Context) v1.PartServiceServ
 func (di *diContainer) CompatibilityChecker(ctx context.Context) application.CompatibilityChecker {
 	return di.compatibilityPartChecker.Get(ctx, func(ctx context.Context) application.CompatibilityChecker {
 		return domain.New()
+	})
+}
+
+func (di *diContainer) TxManager(ctx context.Context) application.TxManager {
+	return di.txManager.Get(ctx, func(ctx context.Context) application.TxManager {
+		tx, err := manager.New(trmpgx.NewDefaultFactory(di.PgPoll(ctx)))
+
+		if err != nil {
+			slog.Error("tx manager", "error", err)
+			return nil
+		}
+
+		return tx
 	})
 }

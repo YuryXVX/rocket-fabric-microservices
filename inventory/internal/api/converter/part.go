@@ -27,6 +27,20 @@ func ToPartTypeModel(t v1.PartType) model.PartType {
 	}
 }
 
+func RequestUUIDsToPartFilter(stringUuids []string) input.PartFilter {
+	uuids := make([]uuid.UUID, len(stringUuids))
+
+	if len(stringUuids) > 0 {
+		for i, f := range stringUuids {
+			uuids[i] = uuid.MustParse(f)
+		}
+	}
+
+	return input.PartFilter{
+		UUIDs: uuids,
+	}
+}
+
 func RequestToInputPartFilter(req *v1.ListPartsRequest) *input.PartFilter {
 	uuids := make([]uuid.UUID, len(req.Uuids))
 
