@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"inventory/internal/api/converter"
 	errs "inventory/internal/errors"
 	v1 "shared/pkg/proto/inventory/v1"
 
@@ -16,7 +17,8 @@ func (a *api) GetPartByUUID(ctx context.Context, req *v1.GetPartByUUIDRequest) (
 		return nil, status.Error(codes.InvalidArgument, "uuid обязателен")
 	}
 
-	_, err := a.serviceInventory.Get(ctx, req.Uuid)
+	part, err := a.applicationService.Get(ctx, req.Uuid)
+
 	if err != nil {
 		if errors.Is(err, errs.ErrInvalidUUID) {
 			return nil, status.Errorf(codes.InvalidArgument, "UUID %s не правильного формата", req.GetUuid())
@@ -30,6 +32,6 @@ func (a *api) GetPartByUUID(ctx context.Context, req *v1.GetPartByUUIDRequest) (
 	}
 
 	return &v1.GetPartByUUIDResponse{
-		// Part: converter.ModelPartToProtoPart(part),
+		Part: converter.ModelPartToProtoPart(part),
 	}, nil
 }

@@ -5,11 +5,11 @@ import v1 "shared/pkg/proto/inventory/v1"
 type api struct {
 	v1.UnimplementedPartServiceServer
 
-	serviceInventory ServiceInventory
+	applicationService ApplicationService
 }
 
-func New(s ServiceInventory) *api {
+func New(s ApplicationService) *api {
 	return &api{
-		serviceInventory: s,
+		applicationService: s,
 	}
 }

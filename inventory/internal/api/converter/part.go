@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"fmt"
 	"inventory/internal/model"
 	"inventory/internal/model/entity"
 	"inventory/internal/model/valueobject"
@@ -76,4 +77,48 @@ func ModelPartListToProtoPartList(parts []*entity.Part) []*v1.Part {
 	}
 
 	return protoParts
+}
+
+func parseUUID(s string) (uuid.UUID, error) {
+	return uuid.Parse(s)
+}
+
+func RequestSlotsToFilter(slots *v1.ValidateCompatibilityRequest) (input.PartFilter, error) {
+	uuids := make([]uuid.UUID, 0, 4)
+
+	parseAndAppend := func(fieldValue string, fieldName string) error {
+		if fieldValue == "" {
+			return nil
+		}
+
+		parsedUUID, err := parseUUID(fieldValue)
+
+		if err != nil {
+			return fmt.Errorf("поле %v имеет валидный uuid %v", fieldName, fieldValue)
+		}
+
+		uuids = append(uuids, parsedUUID)
+
+		return nil
+	}
+
+	if err := parseAndAppend(slots.EngineUuid, "EngineUUID"); err != nil {
+		return input.PartFilter{}, err
+	}
+
+	if err := parseAndAppend(slots.HullUuid, "HullUuid"); err != nil {
+		return input.PartFilter{}, err
+	}
+
+	if err := parseAndAppend(slots.ShieldUuid, "ShieldUuid"); err != nil {
+		return input.PartFilter{}, err
+	}
+
+	if err := parseAndAppend(slots.WeaponUuid, "WeaponUuid"); err != nil {
+		return input.PartFilter{}, err
+	}
+
+	return input.PartFilter{
+		UUIDs: uuids,
+	}, nil
 }

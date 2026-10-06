@@ -2,29 +2,49 @@ package inventory
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
+	"errors"
 
-	"inventory/internal/model"
+	errs "inventory/internal/errors"
+	"inventory/internal/model/entity"
+	"inventory/internal/repository/converter"
+	"inventory/internal/repository/record"
 )
 
-func (r *repository) Get(ctx context.Context, uuid string) (*model.Part, error) {
-	var part model.Part
+const getPartQuery = `
+	SELECT 
+		uuid, name, description, part_type, 
+		price, stock_quantity, created_at, updated_at 
+	FROM parts 
+	WHERE uuid = $1
+`
 
-	row := r.pool.QueryRow(ctx, "SELECT * FROM parts WHERE uuid = $1", uuid)
+func (r *repository) Get(ctx context.Context, uuid string) (*entity.Part, error) {
+	var record record.Part
+
+	row := r.pool.QueryRow(ctx, getPartQuery, uuid)
 
 	err := row.Scan(
-		&part.UUID,
-		&part.Name,
-		&part.Description,
-		&part.PartType,
-		&part.Price,
-		&part.StockQuantity,
-		&part.CreatedAt,
-		&part.UpdatedAt,
+		&record.UUID,
+		&record.Name,
+		&record.Description,
+		&record.PartType,
+		&record.Price,
+		&record.StockQuantity,
+		&record.CreatedAt,
+		&record.UpdatedAt,
 	)
 
 	if err != nil {
-		fmt.Println(err.Error())
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrPartNotFound
+		}
+		return nil, err
+	}
+
+	part, err := converter.RecordPartToDomain(record)
+
+	if err != nil {
 		return nil, err
 	}
 

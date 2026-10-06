@@ -12,6 +12,7 @@ type HullProperties struct {
 func (h *HullProperties) Strength() int { return h.strength }
 
 func (h *HullProperties) CanSupport(e *EngineProperties) bool {
+	fmt.Printf("h %v e %v", h.strength, e.requiredStrength)
 	return h.strength >= e.requiredStrength
 }
 

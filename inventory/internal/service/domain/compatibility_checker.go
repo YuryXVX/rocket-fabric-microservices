@@ -19,7 +19,7 @@ func New() *CompatibilityChecker {
 	return &CompatibilityChecker{}
 }
 
-func (c *CompatibilityChecker) Check(parts []entity.Part) error {
+func (c *CompatibilityChecker) Check(parts []*entity.Part) error {
 	ps := c.extractParts(parts)
 
 	if err := c.requirementDetailCheck(ps); err != nil {
@@ -68,7 +68,7 @@ func (c *CompatibilityChecker) checkShield(ps partsSet) error {
 	}
 }
 
-func (c *CompatibilityChecker) extractParts(parts []entity.Part) partsSet {
+func (c *CompatibilityChecker) extractParts(parts []*entity.Part) partsSet {
 	var ps partsSet
 
 	for _, part := range parts {

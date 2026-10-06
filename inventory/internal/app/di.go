@@ -4,9 +4,8 @@ import (
 	"context"
 	apiV1 "inventory/internal/api/inventory/v1"
 	repositoryInventory "inventory/internal/repository/inventory"
+	application "inventory/internal/service/application/part"
 	"inventory/internal/service/domain"
-	"inventory/internal/service/inventory"
-	serviceInventory "inventory/internal/service/inventory"
 	"log/slog"
 	"os"
 	"plaform/pkg/closer"
@@ -20,13 +19,13 @@ type diContainer struct {
 	// poll
 	pgPool di.Value[*pgxpool.Pool]
 	// repository
-	inventoryRepository di.Value[serviceInventory.InventoryRepository]
+	inventoryRepository di.Value[application.InventoryRepository]
 	// service
-	inventoryService di.Value[apiV1.ServiceInventory]
+	applicationService di.Value[apiV1.ApplicationService]
 	// handlers
 	inventoryHandlers di.Value[v1.PartServiceServer]
 	// domain service checker part
-	compatibilityPartChecker di.Value[serviceInventory.CompatibilityChecker]
+	compatibilityPartChecker di.Value[application.CompatibilityChecker]
 }
 
 func (di *diContainer) PgPoll(ctx context.Context) *pgxpool.Pool {
@@ -61,26 +60,26 @@ func (di *diContainer) PgPoll(ctx context.Context) *pgxpool.Pool {
 	})
 }
 
-func (di *diContainer) InventoryRepository(ctx context.Context) inventory.InventoryRepository {
-	return di.inventoryRepository.Get(ctx, func(ctx context.Context) serviceInventory.InventoryRepository {
+func (di *diContainer) InventoryRepository(ctx context.Context) application.InventoryRepository {
+	return di.inventoryRepository.Get(ctx, func(ctx context.Context) application.InventoryRepository {
 		return repositoryInventory.NewRepository(di.PgPoll(ctx))
 	})
 }
 
-func (di *diContainer) InventoryService(ctx context.Context) apiV1.ServiceInventory {
-	return di.inventoryService.Get(ctx, func(ctx context.Context) apiV1.ServiceInventory {
-		return serviceInventory.NewService(di.InventoryRepository(ctx), di.CompatibilityChecker(ctx))
+func (di *diContainer) ApplicationService(ctx context.Context) apiV1.ApplicationService {
+	return di.applicationService.Get(ctx, func(ctx context.Context) apiV1.ApplicationService {
+		return application.NewService(di.InventoryRepository(ctx), di.CompatibilityChecker(ctx))
 	})
 }
 
 func (di *diContainer) InventoryHandlers(ctx context.Context) v1.PartServiceServer {
 	return di.inventoryHandlers.Get(ctx, func(ctx context.Context) v1.PartServiceServer {
-		return apiV1.New(di.InventoryService(ctx))
+		return apiV1.New(di.ApplicationService(ctx))
 	})
 }
 
-func (di *diContainer) CompatibilityChecker(ctx context.Context) serviceInventory.CompatibilityChecker {
-	return di.compatibilityPartChecker.Get(ctx, func(ctx context.Context) serviceInventory.CompatibilityChecker {
+func (di *diContainer) CompatibilityChecker(ctx context.Context) application.CompatibilityChecker {
+	return di.compatibilityPartChecker.Get(ctx, func(ctx context.Context) application.CompatibilityChecker {
 		return domain.New()
 	})
 }

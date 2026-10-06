@@ -22,7 +22,7 @@ func (a *api) ListParts(ctx context.Context, req *v1.ListPartsRequest) (*v1.List
 		}
 	}
 
-	parts, err := a.serviceInventory.List(ctx, *converter.RequestToInputPartFilter(req))
+	parts, err := a.applicationService.List(ctx, *converter.RequestToInputPartFilter(req))
 
 	if err != nil {
 		if errors.Is(err, errs.ErrInvalidUUID) {
