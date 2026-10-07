@@ -92,7 +92,7 @@ func (di *diContainer) Tx(ctx context.Context) repository.TxManager {
 
 func (di *diContainer) OrderRepository(ctx context.Context) service.OrderRepository {
 	return di.orderRepository.Get(ctx, func(ctx context.Context) service.OrderRepository {
-		return repository.New(di.Pool(ctx), di.Tx(ctx))
+		return repository.New(di.Pool(ctx))
 	})
 }
 
@@ -140,6 +140,7 @@ func (di *diContainer) OrderService(ctx context.Context) apiV1.OrderService {
 			di.InventoryGRPCClient(ctx),
 			di.PaymentGRPCClient(ctx),
 			di.OrderRepository(ctx),
+			di.Tx(ctx),
 		)
 	})
 }

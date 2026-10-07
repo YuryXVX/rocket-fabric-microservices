@@ -2,6 +2,7 @@ package converter
 
 import (
 	"order/internal/model"
+	"order/internal/service/input"
 	v1 "shared/pkg/proto/inventory/v1"
 
 	"github.com/google/uuid"
@@ -16,6 +17,47 @@ func InputToListRequest(in []uuid.UUID) *v1.ListPartsRequest {
 	}
 
 	return &v1.ListPartsRequest{
+		Uuids: uuids,
+	}
+}
+
+func InputPartSlotsToRequest(in input.CreateOrderInput) *v1.ValidateCompatibilityRequest {
+	saveString := func(val *uuid.UUID) string {
+		if val == nil {
+			return ""
+		}
+
+		return val.String()
+	}
+
+	return &v1.ValidateCompatibilityRequest{
+		HullUuid:   in.EngineUUID.String(),
+		EngineUuid: in.HullUUID.String(),
+		ShieldUuid: saveString(in.ShieldUUID),
+		WeaponUuid: saveString(in.WeaponUUID),
+	}
+}
+
+func InputUUIDToReserveRequest(in []uuid.UUID) *v1.ReservePartsRequest {
+	uuids := make([]string, 0, len(in))
+
+	for _, uuid := range in {
+		uuids = append(uuids, *proto.String(uuid.String()))
+	}
+
+	return &v1.ReservePartsRequest{
+		Uuids: uuids,
+	}
+}
+
+func InputUUIDToReleaseRequest(in []uuid.UUID) *v1.ReleasePartsRequest {
+	uuids := make([]string, 0, len(in))
+
+	for _, uuid := range in {
+		uuids = append(uuids, *proto.String(uuid.String()))
+	}
+
+	return &v1.ReleasePartsRequest{
 		Uuids: uuids,
 	}
 }

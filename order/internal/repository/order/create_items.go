@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (r *repository) createItems(ctx context.Context, order model.Order) error {
+func (r *repository) CreateItems(ctx context.Context, order model.Order) error {
 	if len(order.Items) == 0 {
 		return nil
 	}

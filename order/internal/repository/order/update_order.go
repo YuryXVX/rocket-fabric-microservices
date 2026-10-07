@@ -6,8 +6,7 @@ import (
 	"order/internal/model"
 )
 
-func (r *repository) updateOrder(ctx context.Context, order model.Order) error {
-	const sql = `
+const sql = `
     UPDATE orders 
     SET status = $2, 
         transaction_uuid = $3, 
@@ -15,6 +14,8 @@ func (r *repository) updateOrder(ctx context.Context, order model.Order) error {
         created_at = $5, 
         updated_at = $6 
     WHERE uuid = $1`
+
+func (r *repository) updateOrder(ctx context.Context, order model.Order) error {
 
 	_, err := r.getter.DefaultTrOrDB(ctx, r.pool).
 		Exec(ctx, sql,
