@@ -34,7 +34,7 @@ func (r *repository) Get(ctx context.Context, orderUUID uuid.UUID) (model.Order,
 		Where(squirrel.Eq{"o.uuid": orderUUID}).
 		ToSql()
 
-	rows, err := r.getter.DefaultTrOrDB(ctx, r.pool).
+	rows, err := r.pool.
 		Query(ctx, sql, args...)
 
 	if err != nil {

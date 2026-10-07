@@ -109,3 +109,13 @@ func (m *Order) WeaponUUID() *uuid.UUID {
 func (m *Order) OrderItems(items []OrderItem) {
 	m.Items = items
 }
+
+func (m *Order) OrderPartUUIDs() []uuid.UUID {
+	uuids := make([]uuid.UUID, 0, len(m.Items))
+
+	for _, v := range m.Items {
+		uuids = append(uuids, v.PartUUID)
+	}
+
+	return uuids
+}

@@ -16,7 +16,6 @@ const sql = `
     WHERE uuid = $1`
 
 func (r *repository) updateOrder(ctx context.Context, order model.Order) error {
-
 	_, err := r.pool.
 		Exec(ctx, sql,
 			order.UUID,

@@ -12,37 +12,49 @@ import (
 )
 
 func (s *service) Pay(ctx context.Context, orderUUID uuid.UUID, method model.PaymentMethod) (uuid.UUID, error) {
-	order, err := s.orderRepository.Get(ctx, orderUUID)
+	var transactionUUID uuid.UUID
 
-	if err != nil {
-		if errors.Is(err, errs.ErrOrderNotFound) {
-			return uuid.UUID{}, fmt.Errorf("заказ с %s не найден", orderUUID)
+	err := s.txManager.Do(ctx, func(ctx context.Context) error {
+		order, err := s.orderRepository.Get(ctx, orderUUID)
+
+		if err != nil {
+			if errors.Is(err, errs.ErrOrderNotFound) {
+				return fmt.Errorf("заказ с %s не найден", orderUUID)
+			}
+
+			return err
 		}
 
-		return uuid.UUID{}, err
-	}
+		if order.Status == model.OrderStatusPaid {
+			return errs.ErrOrderAlreadyPaid
+		}
 
-	if order.Status == model.OrderStatusPaid {
-		return uuid.UUID{}, errs.ErrOrderAlreadyPaid
-	}
+		if order.Status != model.OrderStatusPendingPayment {
+			return fmt.Errorf("заказ с uuid %s находится не в статусе ожидания оплаты", orderUUID)
+		}
 
-	if order.Status != model.OrderStatusPendingPayment {
-		return uuid.UUID{}, fmt.Errorf("заказ с uuid %s находится не в статусе ожидания оплаты", orderUUID)
-	}
+		order.Status = model.OrderStatusPaid
+		order.PaymentMethod = &method
+		order.TransactionUUID = &transactionUUID
+		order.UpdatedAt = time.Now()
 
-	transactionUUID, err := s.paymentClient.PayOrder(ctx, orderUUID.String(), model.PaymentMethodCard)
+		if err = s.orderRepository.Update(ctx, order); err != nil {
+			return fmt.Errorf("при оплате %s", orderUUID)
+		}
+
+		uuid, err := s.paymentClient.PayOrder(ctx, orderUUID.String(), model.PaymentMethodCard)
+
+		if err != nil {
+			return err
+		}
+
+		transactionUUID = uuid
+
+		return nil
+	})
 
 	if err != nil {
-		return uuid.UUID{}, nil
-	}
-
-	order.Status = model.OrderStatusPaid
-	order.PaymentMethod = &method
-	order.TransactionUUID = &transactionUUID
-	order.UpdatedAt = time.Now()
-
-	if err = s.orderRepository.Update(ctx, order); err != nil {
-		return uuid.UUID{}, fmt.Errorf("при оплате %s", orderUUID)
+		return uuid.UUID{}, err
 	}
 
 	return transactionUUID, nil

@@ -19,6 +19,12 @@ func (s *service) Cancel(ctx context.Context, orderUUID uuid.UUID) error {
 		return fmt.Errorf("заказ с uuid %s находится не в статусе ожидания оплаты", orderUUID)
 	}
 
+	err = s.inventoryClient.ReleaseParts(ctx, order.OrderPartUUIDs())
+
+	if err != nil {
+		return fmt.Errorf("Произошла ошибка в отменой заказа %v", orderUUID)
+	}
+
 	order.Status = model.OrderStatusCancelled
 
 	if err := s.orderRepository.Update(ctx, order); err != nil {
