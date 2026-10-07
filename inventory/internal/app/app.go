@@ -20,7 +20,7 @@ import (
 
 const (
 	// адрес сервера
-	grpcAddress = "localhost:50051"
+	grpcAddress = "127.0.0.1:50051"
 
 	// gRPC keepalive параметры
 	grpcMaxConnectionIdle     = 15 * time.Minute // Закрыть idle-соединения (нет активных RPC)

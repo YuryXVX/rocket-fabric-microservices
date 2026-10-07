@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	inventoryAddress = "localhost:50051"
-	paymentAddress   = "localhost:50050"
+	inventoryAddress = "127.0.0.1:50051"
+	paymentAddress   = "127.0.0.1:50050"
 )
 
 type diContainer struct {

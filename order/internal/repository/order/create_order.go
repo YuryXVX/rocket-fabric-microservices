@@ -10,8 +10,7 @@ import (
 func (r *repository) createOrder(ctx context.Context, order model.Order) error {
 	rec := converter.OrderModelToRecord(&order)
 
-	_, err := r.getter.
-		DefaultTrOrDB(ctx, r.pool).
+	_, err := r.pool.
 		Exec(ctx,
 			"INSERT INTO orders (uuid, status, transaction_uuid, payment_method, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)",
 			rec.OrderUUID,

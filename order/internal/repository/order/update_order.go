@@ -17,7 +17,7 @@ const sql = `
 
 func (r *repository) updateOrder(ctx context.Context, order model.Order) error {
 
-	_, err := r.getter.DefaultTrOrDB(ctx, r.pool).
+	_, err := r.pool.
 		Exec(ctx, sql,
 			order.UUID,
 			order.Status,

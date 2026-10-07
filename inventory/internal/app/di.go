@@ -49,11 +49,8 @@ func (di *diContainer) PgPoll(ctx context.Context) *pgxpool.Pool {
 			os.Exit(1)
 		}
 
-		err = pool.Ping(ctx)
-
-		if err != nil {
-			slog.Error("не удалось выполнить ping PostgreSQL", "error", err)
-			os.Exit(1)
+		if err := pool.Ping(ctx); err != nil {
+			slog.Error("База данных недоступна: %v", err)
 		}
 
 		closer.Add("PostgreSQL pool", func(_ context.Context) error {

@@ -12,7 +12,7 @@ import (
 )
 
 func (r *repository) List(ctx context.Context, input input.PartFilter) ([]*entity.Part, error) {
-	query := "SELECT uuid, properties, name, description, part_type, price, stock_quantity, created_at, updated_at FROM parts"
+	query := "SELECT uuid, properties, name, description, part_type, price, stock_quantity, created_at, updated_at, reserved FROM parts"
 
 	var args []interface{}
 
@@ -51,6 +51,7 @@ func (r *repository) List(ctx context.Context, input input.PartFilter) ([]*entit
 			&p.StockQuantity,
 			&p.CreatedAt,
 			&p.UpdatedAt,
+			&p.Reserved,
 		)
 
 		if err != nil {

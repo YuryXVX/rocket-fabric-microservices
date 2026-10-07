@@ -54,7 +54,7 @@ func (a *App) Run() error {
 	}
 
 	server := &http.Server{
-		Addr:              net.JoinHostPort("localhost", httpPort),
+		Addr:              net.JoinHostPort("127.0.0.1", httpPort),
 		Handler:           r,
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,

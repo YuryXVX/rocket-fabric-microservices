@@ -38,7 +38,7 @@ func (r *repository) CreateItems(ctx context.Context, order model.Order) error {
 		valueStrings.String(),
 	)
 
-	_, err := r.getter.DefaultTrOrDB(ctx, r.pool).Exec(ctx, query, args...)
+	_, err := r.pool.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("bulk insert order items failed: %w", err)
 	}
