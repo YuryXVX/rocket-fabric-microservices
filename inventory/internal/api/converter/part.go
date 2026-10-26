@@ -42,17 +42,48 @@ func RequestUUIDsToPartFilter(stringUuids []string) input.PartFilter {
 }
 
 func RequestToInputPartFilter(req *v1.ListPartsRequest) *input.PartFilter {
-	uuids := make([]uuid.UUID, len(req.Uuids))
+	list, err := ListMapWithError(req.Uuids, func(u string) (uuid.UUID, error) {
+		return uuid.Parse(u)
+	})
 
-	if len(req.Uuids) > 0 {
-		for i, f := range req.Uuids {
-			uuids[i] = uuid.MustParse(f)
-		}
+	if err != nil {
+		return &input.PartFilter{}
 	}
 
 	return &input.PartFilter{
-		UUIDs:    uuids,
+		UUIDs:    list,
 		PartType: ToPartTypeModel(req.PartType),
+	}
+}
+
+func ListMapWithError[T any, U any](
+	list []T,
+	fn func(T) (U, error),
+) ([]U, error) {
+	l := make([]U, len(list))
+
+	for i, el := range list {
+		res, err := fn(el)
+		if err != nil {
+			return nil, err
+		}
+		l[i] = res
+	}
+
+	return l, nil
+}
+
+func RequestToInputCommitParts(req *v1.CommitPartsRequest) *input.PartFilter {
+	list, err := ListMapWithError(req.Uuids, func(u string) (uuid.UUID, error) {
+		return uuid.Parse(u)
+	})
+
+	if err != nil {
+		return &input.PartFilter{}
+	}
+
+	return &input.PartFilter{
+		UUIDs: list,
 	}
 }
 

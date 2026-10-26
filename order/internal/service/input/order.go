@@ -5,6 +5,7 @@ import (
 )
 
 type CreateOrderInput struct {
+	UserUUID   uuid.UUID
 	HullUUID   uuid.UUID
 	EngineUUID uuid.UUID
 	ShieldUUID *uuid.UUID

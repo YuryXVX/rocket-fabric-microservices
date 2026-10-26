@@ -39,12 +39,19 @@ func (s *service) Create(ctx context.Context, in *input.CreateOrderInput) (model
 
 		order = model.Order{
 			UUID:            uuid.New(),
+			UserUUID:        in.UserUUID,
 			Items:           items,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
 			Status:          model.OrderStatusPendingPayment,
 			CreatedAt:       time.Now(),
 		}
+
+		s.orderPaidProducer.ProduceOrderRecord(ctx, model.OrderPaidEvent{
+			OrderUuid: order.UUID.String(),
+			EventUuid: uuid.NewString(),
+			UserUuid:  in.UserUUID.String(),
+		})
 
 		err = s.orderRepository.Create(ctx, order)
 

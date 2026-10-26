@@ -184,8 +184,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 
 					}
+
 				}
+
 			}
+
 		}
 	}
 	s.notFound(w, r)
@@ -392,8 +395,11 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						}
 
 					}
+
 				}
+
 			}
+
 		}
 	}
 	return r, false

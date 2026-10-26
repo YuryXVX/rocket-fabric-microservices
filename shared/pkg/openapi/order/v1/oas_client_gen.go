@@ -124,8 +124,7 @@ func (c *Client) sendCancelOrder(ctx context.Context, params CancelOrderParams) 
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(
-		ctx, CancelOrderOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, CancelOrderOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -219,8 +218,7 @@ func (c *Client) sendCreateOrder(ctx context.Context, request *CreateOrderReques
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(
-		ctx, CreateOrderOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateOrderOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -298,8 +296,7 @@ func (c *Client) sendGetOrder(ctx context.Context, params GetOrderParams) (res G
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(
-		ctx, GetOrderOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, GetOrderOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -391,8 +388,7 @@ func (c *Client) sendPayOrder(ctx context.Context, request *PayOrderRequest, par
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(
-		ctx, PayOrderOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, PayOrderOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)

@@ -27,7 +27,6 @@ const (
 	readTimeout       = 15 * time.Second
 	writeTimeout      = 15 * time.Second
 	idleTimeout       = 60 * time.Second
-	shutdownTimeout   = 10 * time.Second
 	middlewareTimeout = 100 * time.Second
 )
 

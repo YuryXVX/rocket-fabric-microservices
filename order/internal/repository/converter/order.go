@@ -7,6 +7,7 @@ import (
 
 func OrderModelToRecord(in *model.Order) record.OrderRecord {
 	return record.OrderRecord{
+		UserUUID:        in.UserUUID,
 		OrderUUID:       in.UUID,
 		CreatedAt:       in.CreatedAt,
 		TransactionUUID: in.TransactionUUID,

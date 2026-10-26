@@ -1,5 +1,6 @@
 type: object
 required:
+  - user_uuid
   - order_uuid
   - hull_uuid
   - engine_uuid
@@ -7,6 +8,11 @@ required:
   - status
   - created_at
 properties:
+  user_uuid:
+    type: string
+    format: uuid
+    description: UUID пользователя (v4)
+    example: "550e8400-e29b-41d4-a716-446655440000"
   order_uuid:
     type: string
     format: uuid

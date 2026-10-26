@@ -6,14 +6,18 @@ import (
 	apiV1 "order/internal/api/order/v1"
 	"order/internal/client/grpc/inventory"
 	"order/internal/client/grpc/payment"
+	orderproducer "order/internal/producer/order_producer"
 	repository "order/internal/repository/order"
 	service "order/internal/service/order"
 	"os"
 	"plaform/pkg/closer"
 	"plaform/pkg/di"
+	"plaform/pkg/kafka/consumer"
+	"plaform/pkg/kafka/producer"
 	inventoryV1 "shared/pkg/proto/inventory/v1"
 	paymentV1 "shared/pkg/proto/payment/v1"
 
+	"github.com/IBM/sarama"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
@@ -29,10 +33,21 @@ const (
 	paymentAddress   = "127.0.0.1:50050"
 )
 
+type ConsumerService interface {
+	RunConsumer(ctx context.Context) error
+}
+
 type diContainer struct {
 	// grpc clients
 	inventoryGrpcClient di.Value[service.InventoryClientGrpc]
 	paymentGrpcClient   di.Value[service.PaymentClientGrpc]
+
+	// обертки для kafka
+	producer di.Value[*producer.Producer]
+	consumer di.Value[*consumer.Consumer]
+
+	syncProducer  di.Value[sarama.SyncProducer]
+	consumerGroup di.Value[sarama.ConsumerGroup]
 
 	// tx manager
 	txManager di.Value[repository.TxManager]
@@ -44,6 +59,10 @@ type diContainer struct {
 	orderService di.Value[apiV1.OrderService]
 
 	api di.Value[orderV1.Handler]
+
+	// kafka services
+	assemblyConsumerSvc  di.Value[ConsumerService]
+	orderPaidProducerSvc di.Value[service.OrderPaidProducer]
 }
 
 func (di *diContainer) Pool(ctx context.Context) *pgxpool.Pool {
@@ -141,6 +160,7 @@ func (di *diContainer) OrderService(ctx context.Context) apiV1.OrderService {
 			di.PaymentGRPCClient(ctx),
 			di.OrderRepository(ctx),
 			di.Tx(ctx),
+			di.OrderPaidProduce(ctx),
 		)
 	})
 }
@@ -149,4 +169,48 @@ func (di *diContainer) OrderHandlers(ctx context.Context) orderV1.Handler {
 	return di.api.Get(ctx, func(ctx context.Context) orderV1.Handler {
 		return apiV1.New(di.OrderService(ctx))
 	})
+}
+
+func (di *diContainer) OrderPaidProduce(ctx context.Context) service.OrderPaidProducer {
+	return di.orderPaidProducerSvc.Get(ctx, func(ctx context.Context) service.OrderPaidProducer {
+		return orderproducer.NewProducer(di.Producer(ctx))
+	})
+}
+
+func (d *diContainer) SyncProducer(ctx context.Context) sarama.SyncProducer {
+	return d.syncProducer.Get(ctx, func(ctx context.Context) sarama.SyncProducer {
+		config := SaramaConfig()
+
+		p, err := sarama.NewSyncProducer(
+			[]string{"localhost:9092"},
+			config,
+		)
+
+		if err != nil {
+			slog.Error("не удалось создать sync producer", "error", err)
+			os.Exit(1)
+		}
+
+		closer.Add("Kafka sync producer", func(_ context.Context) error {
+			return p.Close()
+		})
+
+		return p
+	})
+}
+
+func (d *diContainer) Producer(ctx context.Context) *producer.Producer {
+	return d.producer.Get(ctx, func(ctx context.Context) *producer.Producer {
+		return producer.NewProducer(d.SyncProducer(ctx), "order.paid")
+	})
+}
+
+func SaramaConfig() *sarama.Config {
+	cfg := sarama.NewConfig()
+	cfg.Version = sarama.V4_0_0_0
+	cfg.Producer.Return.Successes = true
+
+	cfg.Metadata.AllowAutoTopicCreation = true
+
+	return cfg
 }

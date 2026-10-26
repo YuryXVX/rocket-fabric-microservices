@@ -34,3 +34,7 @@ type TxManager interface {
 type PaymentClientGrpc interface {
 	PayOrder(ctx context.Context, orderUUID string, paymentMethod model.PaymentMethod) (uuid.UUID, error)
 }
+
+type OrderPaidProducer interface {
+	ProduceOrderRecord(ctx context.Context, event model.OrderPaidEvent) error
+}

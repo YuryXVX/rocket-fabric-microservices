@@ -17,7 +17,7 @@ func (s *service) List(ctx context.Context, input input.PartFilter) ([]*entity.P
 		}
 	}
 
-	list, err := s.inventoryRepository.List(ctx, input)
+	list, err := s.inventoryRepository.ListForUpdate(ctx, input)
 
 	if err != nil {
 		if errors.Is(err, errs.ErrPartNotFound) {

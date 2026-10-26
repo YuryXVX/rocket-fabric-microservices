@@ -8,6 +8,7 @@ import (
 
 type Order struct {
 	UUID            uuid.UUID
+	UserUUID        uuid.UUID
 	Items           []OrderItem
 	TransactionUUID *uuid.UUID
 	PaymentMethod   *PaymentMethod

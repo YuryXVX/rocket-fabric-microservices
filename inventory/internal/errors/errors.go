@@ -12,4 +12,5 @@ var (
 	ErrRequirementDetailCheck = errors.New("корпус или двигатель отсутсвуют")
 	ErrIncompatibleShield     = errors.New("щит нельзя использовать с этим типом оружия")
 	ErrDuplicatePartUUID      = errors.New("обнаружены дубликаты идентификаторов деталей в запросе")
+	ErrPartsNotAvailable      = errors.New("failed_precondition")
 )

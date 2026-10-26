@@ -8,9 +8,10 @@ import (
 )
 
 type ApplicationService interface {
-	Get(ctx context.Context, uuid string) (*entity.Part, error)
-	List(ctx context.Context, input input.PartFilter) ([]*entity.Part, error)
-	Release(ctx context.Context, input input.PartFilter) error
-	Reserve(ctx context.Context, input input.PartFilter) error
-	ValidateCompatibility(ctx context.Context, input input.PartFilter) error
+	Get(context.Context, string) (*entity.Part, error)
+	List(context.Context, input.PartFilter) ([]*entity.Part, error)
+	Release(context.Context, input.PartFilter) error
+	Reserve(context.Context, input.PartFilter) error
+	ValidateCompatibility(context.Context, input.PartFilter) error
+	CommitParts(context.Context, *input.PartFilter) error
 }

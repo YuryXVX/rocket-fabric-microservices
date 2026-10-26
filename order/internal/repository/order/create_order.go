@@ -12,13 +12,14 @@ func (r *repository) createOrder(ctx context.Context, order model.Order) error {
 
 	_, err := r.pool.
 		Exec(ctx,
-			"INSERT INTO orders (uuid, status, transaction_uuid, payment_method, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)",
+			"INSERT INTO orders (uuid, status, transaction_uuid, payment_method, created_at, updated_at, user_uuid) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 			rec.OrderUUID,
 			rec.Status,
 			rec.TransactionUUID,
 			rec.PaymentMethod,
 			rec.CreatedAt,
 			rec.UpdatedAt,
+			rec.UserUUID,
 		)
 
 	if err != nil {

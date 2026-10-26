@@ -50,8 +50,7 @@ func (s *Server) handleCancelOrderRequest(args [1]string, argsEscaped bool, w ht
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(
-		r.Context(), CancelOrderOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), CancelOrderOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -195,8 +194,7 @@ func (s *Server) handleCreateOrderRequest(args [0]string, argsEscaped bool, w ht
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(
-		r.Context(), CreateOrderOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), CreateOrderOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -340,8 +338,7 @@ func (s *Server) handleGetOrderRequest(args [1]string, argsEscaped bool, w http.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(
-		r.Context(), GetOrderOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), GetOrderOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -484,8 +481,7 @@ func (s *Server) handlePayOrderRequest(args [1]string, argsEscaped bool, w http.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(
-		r.Context(), PayOrderOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), PayOrderOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)

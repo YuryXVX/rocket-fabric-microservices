@@ -24,6 +24,7 @@ const (
 	PartService_ValidateCompatibility_FullMethodName = "/inventory.v1.PartService/ValidateCompatibility"
 	PartService_ReserveParts_FullMethodName          = "/inventory.v1.PartService/ReserveParts"
 	PartService_ReleaseParts_FullMethodName          = "/inventory.v1.PartService/ReleaseParts"
+	PartService_CommitParts_FullMethodName           = "/inventory.v1.PartService/CommitParts"
 )
 
 // PartServiceClient is the client API for PartService service.
@@ -48,6 +49,10 @@ type PartServiceClient interface {
 	ReserveParts(ctx context.Context, in *ReservePartsRequest, opts ...grpc.CallOption) (*ReservePartsResponse, error)
 	// ReleaseParts освобождает ранее зарезервированные детали
 	ReleaseParts(ctx context.Context, in *ReleasePartsRequest, opts ...grpc.CallOption) (*ReleasePartsResponse, error)
+	// CommitParts списывает детали со склада после успешной сборки корабля
+	// Вызывается OrderService после получения события ShipAssembled из Kafka
+	// stock -= 1, reserved -= 1 для каждой детали
+	CommitParts(ctx context.Context, in *CommitPartsRequest, opts ...grpc.CallOption) (*CommitPartsResponse, error)
 }
 
 type partServiceClient struct {
@@ -108,6 +113,16 @@ func (c *partServiceClient) ReleaseParts(ctx context.Context, in *ReleasePartsRe
 	return out, nil
 }
 
+func (c *partServiceClient) CommitParts(ctx context.Context, in *CommitPartsRequest, opts ...grpc.CallOption) (*CommitPartsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommitPartsResponse)
+	err := c.cc.Invoke(ctx, PartService_CommitParts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PartServiceServer is the server API for PartService service.
 // All implementations must embed UnimplementedPartServiceServer
 // for forward compatibility.
@@ -130,6 +145,10 @@ type PartServiceServer interface {
 	ReserveParts(context.Context, *ReservePartsRequest) (*ReservePartsResponse, error)
 	// ReleaseParts освобождает ранее зарезервированные детали
 	ReleaseParts(context.Context, *ReleasePartsRequest) (*ReleasePartsResponse, error)
+	// CommitParts списывает детали со склада после успешной сборки корабля
+	// Вызывается OrderService после получения события ShipAssembled из Kafka
+	// stock -= 1, reserved -= 1 для каждой детали
+	CommitParts(context.Context, *CommitPartsRequest) (*CommitPartsResponse, error)
 	mustEmbedUnimplementedPartServiceServer()
 }
 
@@ -154,6 +173,9 @@ func (UnimplementedPartServiceServer) ReserveParts(context.Context, *ReservePart
 }
 func (UnimplementedPartServiceServer) ReleaseParts(context.Context, *ReleasePartsRequest) (*ReleasePartsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReleaseParts not implemented")
+}
+func (UnimplementedPartServiceServer) CommitParts(context.Context, *CommitPartsRequest) (*CommitPartsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitParts not implemented")
 }
 func (UnimplementedPartServiceServer) mustEmbedUnimplementedPartServiceServer() {}
 func (UnimplementedPartServiceServer) testEmbeddedByValue()                     {}
@@ -266,6 +288,24 @@ func _PartService_ReleaseParts_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PartService_CommitParts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitPartsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartServiceServer).CommitParts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartService_CommitParts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartServiceServer).CommitParts(ctx, req.(*CommitPartsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PartService_ServiceDesc is the grpc.ServiceDesc for PartService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -292,6 +332,10 @@ var PartService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReleaseParts",
 			Handler:    _PartService_ReleaseParts_Handler,
+		},
+		{
+			MethodName: "CommitParts",
+			Handler:    _PartService_CommitParts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

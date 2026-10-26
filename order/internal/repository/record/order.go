@@ -7,6 +7,7 @@ import (
 )
 
 type OrderRecord struct {
+	UserUUID        uuid.UUID      `db:"user_uuid"`
 	OrderUUID       uuid.UUID      `db:"uuid"`
 	Status          OrderStatus    `db:"status"`
 	TransactionUUID *uuid.UUID     `db:"transaction_uuid"`

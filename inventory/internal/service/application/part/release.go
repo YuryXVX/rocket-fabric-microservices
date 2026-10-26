@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 	"inventory/internal/service/input"
 )
 
@@ -17,8 +16,6 @@ func (a *service) Release(ctx context.Context, input input.PartFilter) error {
 		for _, p := range parts {
 			p.ReleasePart()
 		}
-
-		fmt.Printf("part update release %+v", parts)
 
 		return a.inventoryRepository.UpdateInventoryBatch(ctx, parts)
 	})
