@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os/signal"
+	"plaform/pkg/closer"
 	"plaform/pkg/logger"
 	orderV1 "shared/pkg/openapi/order/v1"
 	"syscall"
@@ -61,15 +62,36 @@ func (a *App) Run() error {
 		IdleTimeout:       idleTimeout,
 	}
 
+	errCh := make(chan error, 2)
+
+	go func() {
+		go func() {
+			if err := a.runConsumer(ctx); err != nil {
+				errCh <- fmt.Errorf("потребитель упал: %w", err)
+				return
+			}
+			errCh <- nil
+		}()
+	}()
+
 	go func() {
 		slog.Info("🚀 старт сервера", "port", httpPort)
 		if serveErr := server.ListenAndServe(); serveErr != nil && serveErr != http.ErrServerClosed {
 			slog.Error("❌ ошибка запуска сервера", "error", serveErr)
+			errCh <- serveErr
 			cancel()
 		}
+
+		errCh <- nil
 	}()
 
-	<-ctx.Done()
+	var runErr error
+	select {
+	case runErr = <-errCh:
+		// один из серверов сам упал
+	case <-ctx.Done():
+		slog.Info("получен сигнал завершения, начинаем graceful shutdown")
+	}
 	slog.Info("🛑 завершение работы сервера...")
 
 	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), time.Hour)
@@ -83,9 +105,16 @@ func (a *App) Run() error {
 		}
 	}
 
+	if err := closer.CloseAll(shutdownCtx); err != nil {
+		slog.Error("ошибка при завершении работы", "error", err)
+		if runErr == nil {
+			runErr = err
+		}
+	}
+
 	slog.Info("✅ сервер остановлен")
 
-	return nil
+	return runErr
 }
 
 func (a *App) initDeps(ctx context.Context) {
@@ -123,4 +152,8 @@ func (a *App) setupRouter(h orderV1.Handler) (chi.Router, error) {
 	r.Handle("/api/*", orderServer)
 
 	return r, nil
+}
+
+func (a *App) runConsumer(ctx context.Context) error {
+	return a.diContainer.AssemblyServiceProducer(ctx).RunConsumer(ctx)
 }

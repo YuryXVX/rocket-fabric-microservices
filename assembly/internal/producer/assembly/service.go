@@ -34,6 +34,7 @@ func (s *service) AssemblyEventProduced(ctx context.Context, event model.OrderPa
 	}
 
 	payload, err := proto.Marshal(msg)
+
 	if err != nil {
 		slog.ErrorContext(ctx, "не удалось сериализовать ShipAssembled", "error", err)
 		return err

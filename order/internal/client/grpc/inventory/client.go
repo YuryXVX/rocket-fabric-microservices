@@ -46,3 +46,9 @@ func (i *inventoryClient) ReleaseParts(ctx context.Context, in []uuid.UUID) erro
 
 	return err
 }
+
+func (i *inventoryClient) CommitParts(ctx context.Context, in []uuid.UUID) error {
+	_, err := i.grpc.CommitParts(ctx, converter.InputUUIDToCommitParsRequest(in))
+
+	return err
+}

@@ -25,6 +25,7 @@ type InventoryClientGrpc interface {
 	ValidateCompatibility(ctx context.Context, in input.CreateOrderInput) error
 	ReserveParts(ctx context.Context, in []uuid.UUID) error
 	ReleaseParts(ctx context.Context, in []uuid.UUID) error
+	CommitParts(ctx context.Context, in []uuid.UUID) error
 }
 
 type TxManager interface {

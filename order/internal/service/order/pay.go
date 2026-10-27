@@ -33,19 +33,29 @@ func (s *service) Pay(ctx context.Context, orderUUID uuid.UUID, method model.Pay
 			return fmt.Errorf("заказ с uuid %s находится не в статусе ожидания оплаты", orderUUID)
 		}
 
+		uuid, err := s.paymentClient.PayOrder(ctx, orderUUID.String(), model.PaymentMethodCard)
+
+		if err != nil {
+			return err
+		}
+
 		order.Status = model.OrderStatusPaid
 		order.PaymentMethod = &method
-		order.TransactionUUID = &transactionUUID
+		order.TransactionUUID = new(uuid)
 		order.UpdatedAt = time.Now()
 
 		if err = s.orderRepository.Update(ctx, order); err != nil {
 			return fmt.Errorf("при оплате %s", orderUUID)
 		}
 
-		uuid, err := s.paymentClient.PayOrder(ctx, orderUUID.String(), model.PaymentMethodCard)
+		err = s.orderPaidProducer.ProduceOrderRecord(ctx, model.OrderPaidEvent{
+			OrderUuid: order.UUID.String(),
+			UserUuid:  orderUUID.String(),
+			EventUuid: uuid.String(),
+		})
 
 		if err != nil {
-			return err
+			return fmt.Errorf("при отправке сообщения в [produce-order-record] %w", err)
 		}
 
 		transactionUUID = uuid

@@ -94,3 +94,15 @@ func PartTypeOrder(t v1.PartType) model.PartType {
 
 	return partType
 }
+
+func InputUUIDToCommitParsRequest(in []uuid.UUID) *v1.CommitPartsRequest {
+	uuids := make([]string, 0, len(in))
+
+	for _, uuid := range in {
+		uuids = append(uuids, *proto.String(uuid.String()))
+	}
+
+	return &v1.CommitPartsRequest{
+		Uuids: uuids,
+	}
+}

@@ -6,6 +6,7 @@ import (
 	apiV1 "order/internal/api/order/v1"
 	"order/internal/client/grpc/inventory"
 	"order/internal/client/grpc/payment"
+	"order/internal/consumer/assembly"
 	orderproducer "order/internal/producer/order_producer"
 	repository "order/internal/repository/order"
 	service "order/internal/service/order"
@@ -13,7 +14,7 @@ import (
 	"plaform/pkg/closer"
 	"plaform/pkg/di"
 	"plaform/pkg/kafka/consumer"
-	"plaform/pkg/kafka/producer"
+	kafka_middleware "plaform/pkg/kafka/middleware"
 	inventoryV1 "shared/pkg/proto/inventory/v1"
 	paymentV1 "shared/pkg/proto/payment/v1"
 
@@ -26,6 +27,9 @@ import (
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 
 	orderV1 "shared/pkg/openapi/order/v1"
+
+	wrappedKafkaConsumer "plaform/pkg/kafka/consumer"
+	"plaform/pkg/kafka/producer"
 )
 
 const (
@@ -205,12 +209,56 @@ func (d *diContainer) Producer(ctx context.Context) *producer.Producer {
 	})
 }
 
+func (d *diContainer) Consumer(ctx context.Context) *wrappedKafkaConsumer.Consumer {
+	return d.consumer.Get(ctx, func(ctx context.Context) *wrappedKafkaConsumer.Consumer {
+		return wrappedKafkaConsumer.NewConsumer(
+			d.ConsumerGroup(ctx),
+			[]string{
+				"assembly.ship-assembled",
+			},
+			wrappedKafkaConsumer.WithMiddlewares(
+				kafka_middleware.ConsumerLogging(),
+			),
+		)
+	})
+}
+
+func (d *diContainer) AssemblyServiceProducer(ctx context.Context) ConsumerService {
+	return d.assemblyConsumerSvc.Get(ctx, func(ctx context.Context) ConsumerService {
+		return assembly.NewService(d.Consumer(ctx), d.OrderService(ctx))
+	})
+}
+
+func (d *diContainer) ConsumerGroup(ctx context.Context) sarama.ConsumerGroup {
+	return d.consumerGroup.Get(ctx, func(ctx context.Context) sarama.ConsumerGroup {
+		consumerGroup, err := sarama.NewConsumerGroup(
+			[]string{"localhost:9092"},
+			"1",
+			SaramaConfig(),
+		)
+
+		if err != nil {
+			slog.Error("не удалось создать consumer group", "error", err)
+			os.Exit(1)
+		}
+
+		closer.Add("Kafka consumer group", func(_ context.Context) error {
+			return consumerGroup.Close()
+		})
+
+		return consumerGroup
+	})
+}
+
 func SaramaConfig() *sarama.Config {
 	cfg := sarama.NewConfig()
 	cfg.Version = sarama.V4_0_0_0
 	cfg.Producer.Return.Successes = true
 
 	cfg.Metadata.AllowAutoTopicCreation = true
+
+	cfg.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategyRoundRobin()}
+	cfg.Consumer.Offsets.Initial = sarama.OffsetOldest
 
 	return cfg
 }
