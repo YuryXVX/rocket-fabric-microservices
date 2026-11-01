@@ -41,7 +41,7 @@ func (c *service) OrderPaidHandler(ctx context.Context, mgs kafka.Message) (mode
 		return model.OrderPaidEvent{}, fmt.Errorf("ошибка при декодировании сообщения %w", err)
 	}
 
-	fmt.Printf("[mgs] - %+v", event)
+	fmt.Printf("[OrderPaidHandler] - %+v", event)
 
 	return event, nil
 }
