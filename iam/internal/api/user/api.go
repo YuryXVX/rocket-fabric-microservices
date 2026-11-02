@@ -6,8 +6,12 @@ import (
 
 type api struct {
 	v1.UnimplementedUserServiceServer
+
+	service UserService
 }
 
-func New() *api {
-	return &api{}
+func New(iam UserService) *api {
+	return &api{
+		service: iam,
+	}
 }

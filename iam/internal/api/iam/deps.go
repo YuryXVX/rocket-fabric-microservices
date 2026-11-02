@@ -1,9 +1,15 @@
-package api_iam
+package api_session
 
-import "context"
+import (
+	"context"
+	"iam/internal/model"
+	"iam/internal/service/input"
 
-type IAMService interface {
-	Login(context.Context) error
-	Logout(context.Context) error
-	WhoIam(context.Context) error
+	"github.com/google/uuid"
+)
+
+type SessionService interface {
+	Login(context.Context, input.LoginInput) (uuid.UUID, error)
+	Logout(context.Context, input.LogoutInput) error
+	WhoIam(context.Context, input.WhoIamInput) (model.Session, error)
 }

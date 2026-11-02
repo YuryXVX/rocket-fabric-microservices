@@ -1,4 +1,4 @@
-package api_iam
+package api_session
 
 import (
 	v1Auth "shared/pkg/proto/auth/v1"
@@ -6,8 +6,12 @@ import (
 
 type api struct {
 	v1Auth.UnimplementedAuthServiceServer
+
+	service SessionService
 }
 
-func New() *api {
-	return &api{}
+func New(sessionService SessionService) *api {
+	return &api{
+		service: sessionService,
+	}
 }

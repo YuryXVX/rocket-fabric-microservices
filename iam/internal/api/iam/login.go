@@ -1,4 +1,4 @@
-package api_iam
+package api_session
 
 import (
 	"context"

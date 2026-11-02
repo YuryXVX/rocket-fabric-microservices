@@ -2,12 +2,18 @@ package api_user
 
 import (
 	"context"
+	"iam/internal/api/converter"
 	v1 "shared/pkg/proto/user/v1"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-func (a *api) Register(context.Context, *v1.RegisterRequest) (*v1.RegisterResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
+func (a *api) Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error) {
+	uuid, err := a.service.Register(ctx, converter.RequestToInput(req))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.RegisterResponse{
+		UserUuid: uuid.String(),
+	}, nil
 }
