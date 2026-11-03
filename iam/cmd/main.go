@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"iam/internal/app"
+	"iam/internal/config"
 	"log/slog"
 	"os"
 
@@ -16,6 +17,8 @@ func MustLoadConfig() {
 		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)
 		os.Exit(1)
 	}
+
+	config.MustLoad()
 }
 
 func main() {

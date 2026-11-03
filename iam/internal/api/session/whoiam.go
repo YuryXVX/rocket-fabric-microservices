@@ -3,11 +3,11 @@ package api_session
 import (
 	"context"
 	v1 "shared/pkg/proto/auth/v1"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	v1Common "shared/pkg/proto/common/v1"
 )
 
 func (a *api) Whoami(ctx context.Context, req *v1.WhoamiRequest) (*v1.WhoamiResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Whoami not implemented")
+	return &v1.WhoamiResponse{
+		Session: &v1Common.Session{},
+	}, nil
 }

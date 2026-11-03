@@ -17,4 +17,6 @@ var (
 	ErrEmptyCredential = errors.New("логин и пароль обязательны")
 	ErrEmptySessionID  = errors.New("session_uuid обязателен")
 	ErrInvalidUUID     = errors.New("неверный формат UUID")
+
+	ErrInvalidRegister = errors.New("неверный формат запроса для регистрации")
 )

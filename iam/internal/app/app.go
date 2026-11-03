@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"iam/internal/config"
 	"log/slog"
 	"net"
 	"os"
@@ -19,9 +20,6 @@ import (
 )
 
 const (
-	// адрес сервера
-	grpcAddress = "127.0.0.1:50049"
-
 	// gRPC keepalive параметры
 	grpcMaxConnectionIdle     = 15 * time.Minute // Закрыть idle-соединения (нет активных RPC)
 	grpcMaxConnectionAge      = 30 * time.Minute // Принудительная ротация для балансировки
@@ -124,7 +122,7 @@ func (a *App) initGRPCServer(ctx context.Context) {
 }
 
 func (a *App) runGRPCServer() error {
-	slog.Info("🚀 gRPC-сервер запущен", "address", grpcAddress)
+	slog.Info("🚀 gRPC-сервер запущен", "address", config.AppConfig().Grpc.Address())
 
 	return a.grpcServer.Serve(a.listener)
 }
@@ -134,7 +132,7 @@ func (a *App) initDI(ctx context.Context) {
 }
 
 func (a *App) initListener(_ context.Context) {
-	listener, err := net.Listen("tcp", grpcAddress) //nolint:noctx // net.Listen не требует контекст, адрес из конфига
+	listener, err := net.Listen("tcp", config.AppConfig().Grpc.Address()) //nolint:noctx // net.Listen не требует контекст, адрес из конфига
 	if err != nil {
 		slog.Error("не удалось создать TCP-листенер", "error", err)
 		os.Exit(1)
