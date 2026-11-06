@@ -14,13 +14,15 @@ func (r *repository) GetUserByLogin(ctx context.Context, login string) (model.Us
 
 	query := "SELECT uuid, login, password_hash, created_at, updated_at FROM users WHERE login = $1"
 
-	err := r.pool.QueryRow(ctx, query, login).Scan(
-		&u.UUID,
-		&u.Login,
-		&u.PasswordHash,
-		&u.CreatedAt,
-		&u.UpdatedAt,
-	)
+	err := r.pool.
+		QueryRow(ctx, query, login).
+		Scan(
+			&u.UUID,
+			&u.Login,
+			&u.PasswordHash,
+			&u.CreatedAt,
+			&u.UpdatedAt,
+		)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

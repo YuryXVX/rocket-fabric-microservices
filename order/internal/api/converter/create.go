@@ -16,9 +16,9 @@ func toPrt(val orderv1.OptNilUUID) *uuid.UUID {
 	return &u
 }
 
-func CreteRequestToInput(req *orderv1.CreateOrderRequest) *input.CreateOrderInput {
+func CreteRequestToInput(req *orderv1.CreateOrderRequest, userUUID uuid.UUID) *input.CreateOrderInput {
 	return &input.CreateOrderInput{
-		UserUUID:   req.UserUUID,
+		UserUUID:   userUUID,
 		HullUUID:   req.HullUUID,
 		EngineUUID: req.EngineUUID,
 		ShieldUUID: toPrt(req.ShieldUUID),

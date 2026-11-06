@@ -4,8 +4,11 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"order/internal/model"
 	"plaform/pkg/auth"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // RequestLogger создает middleware для логирования времени выполнения запросов
@@ -29,7 +32,7 @@ func RequestLogger(next http.Handler) http.Handler {
 }
 
 type IamClient interface {
-	WhoIam(context.Context, string) (string, error)
+	WhoIam(context.Context, string) (model.Session, error)
 }
 
 func AuthMiddleware(iam IamClient) func(http.Handler) http.Handler {
@@ -42,16 +45,27 @@ func AuthMiddleware(iam IamClient) func(http.Handler) http.Handler {
 				return
 			}
 
-			sessionUUID, err := iam.WhoIam(r.Context(), h)
+			session, err := iam.WhoIam(r.Context(), h)
 
 			if err != nil {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
 
+			uuidUser, err := uuid.Parse(session.UserUUID)
+
+			if err != nil {
+				http.Error(w, "Ошибка формата uuid пользователя", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := r.Context()
+			ctx = auth.WithUserUUID(ctx, uuidUser)
+			ctx = auth.WithSessionUUID(ctx, session.SessionUUID)
+
 			next.ServeHTTP(
 				w,
-				r.WithContext(auth.WithSessionUUID(r.Context(), sessionUUID)),
+				r.WithContext(ctx),
 			)
 		})
 	}

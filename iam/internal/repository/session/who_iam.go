@@ -24,13 +24,9 @@ func (r *repository) WhoIam(ctx context.Context, in uuid.UUID) (model.Session, e
 		return model.Session{}, err
 	}
 
-	fmt.Printf("view %+v", view.UserUUID)
-
 	if view.UserUUID == uuid.Nil {
 		return model.Session{}, ErrSessionNotFound
 	}
-
-	view.UUID = in
 
 	return converter.SessionRedisViewToModel(view), nil
 }

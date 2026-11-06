@@ -7,12 +7,14 @@ import (
 	"order/internal/repository/converter"
 )
 
+const query = "INSERT INTO orders (uuid, status, transaction_uuid, payment_method, created_at, updated_at, user_uuid) VALUES ($1, $2, $3, $4, $5, $6, $7)"
+
 func (r *repository) createOrder(ctx context.Context, order model.Order) error {
 	rec := converter.OrderModelToRecord(&order)
 
 	_, err := r.pool.
 		Exec(ctx,
-			"INSERT INTO orders (uuid, status, transaction_uuid, payment_method, created_at, updated_at, user_uuid) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+			query,
 			rec.OrderUUID,
 			rec.Status,
 			rec.TransactionUUID,

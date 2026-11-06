@@ -2,6 +2,7 @@ package iam
 
 import (
 	"context"
+	"order/internal/model"
 	iamV1 "shared/pkg/proto/auth/v1"
 )
 
@@ -15,14 +16,17 @@ func New(grpc iamV1.AuthServiceClient) *IamClient {
 	}
 }
 
-func (c *IamClient) WhoIam(ctx context.Context, sessionUUID string) (string, error) {
+func (c *IamClient) WhoIam(ctx context.Context, sessionUUID string) (model.Session, error) {
 	res, err := c.grpc.Whoami(ctx, &iamV1.WhoamiRequest{
 		SessionUuid: sessionUUID,
 	})
 
 	if err != nil {
-		return "", err
+		return model.Session{}, err
 	}
 
-	return res.User.Uuid, nil
+	return model.Session{
+		UserUUID:    res.User.Uuid,
+		SessionUUID: res.Session.Uuid,
+	}, nil
 }
