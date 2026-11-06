@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	apiV1 "inventory/internal/api/inventory/v1"
+	"inventory/internal/client/grpc/iam"
+	interceptorAuth "inventory/internal/interceptors/auth"
 	repositoryInventory "inventory/internal/repository/inventory"
 	application "inventory/internal/service/application/part"
 	"inventory/internal/service/domain"
@@ -10,12 +12,19 @@ import (
 	"os"
 	"plaform/pkg/closer"
 	"plaform/pkg/di"
+	iamV1 "shared/pkg/proto/auth/v1"
 	v1 "shared/pkg/proto/inventory/v1"
 
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+var (
+	iamAddress = "127.0.0.1:50049"
 )
 
 type diContainer struct {
@@ -31,6 +40,9 @@ type diContainer struct {
 	compatibilityPartChecker di.Value[application.CompatibilityChecker]
 	// tx manager
 	txManager di.Value[application.TxManager]
+
+	// iamClient
+	iamGrpcClient di.Value[interceptorAuth.IamClient]
 }
 
 func (di *diContainer) PgPoll(ctx context.Context) *pgxpool.Pool {
@@ -50,7 +62,8 @@ func (di *diContainer) PgPoll(ctx context.Context) *pgxpool.Pool {
 		}
 
 		if err := pool.Ping(ctx); err != nil {
-			slog.Error("База данных недоступна: %v", err.Error())
+			slog.Error("База данных недоступна: %v", "error", err.Error())
+			os.Exit(1)
 		}
 
 		closer.Add("PostgreSQL pool", func(_ context.Context) error {
@@ -101,4 +114,46 @@ func (di *diContainer) TxManager(ctx context.Context) application.TxManager {
 
 		return tx
 	})
+}
+
+func createConnection(target string) (*grpc.ClientConn, error) {
+	return grpc.NewClient(target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+}
+
+func (di *diContainer) IamClient(ctx context.Context) interceptorAuth.IamClient {
+	return di.iamGrpcClient.Get(ctx, func(ctx context.Context) interceptorAuth.IamClient {
+		conn, err := createConnection(iamAddress)
+
+		if err != nil {
+			slog.Error("ошибки при создании коннекшена", "error", err)
+			os.Exit(1)
+		}
+
+		closer.Add("close iam grpc connection", func(ctx context.Context) error {
+			conn.Close()
+			return nil
+		})
+
+		client := iamV1.NewAuthServiceClient(conn)
+
+		return iam.New(client)
+	})
+	// return *di.iamGrpcClient.Get(ctx context.Context, initFn func(ctx context.Context) *interceptorAuth.IamClient).Get(ctx, func(ctx context.Context) interceptorAuth.IamClient {
+	// 	connection, err := createConnection(iamAddress)
+
+	// 	if err != nil {
+	// 		slog.Error("ошибки при создании коннекшена", "error", err)
+	// 	}
+
+	// 	closer.Add("close iam grpc connection", func(ctx context.Context) error {
+	// 		connection.Close()
+	// 		return nil
+	// 	})
+
+	// 	client := v1Auth.NewAuthServiceClient(connection)
+
+	// 	return iam.New(client)
+	// })
 }

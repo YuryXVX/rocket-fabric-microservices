@@ -34,3 +34,5 @@ func SessionUUIDFromContext(ctx context.Context) (string, bool) {
 	sessionUUID, ok := ctx.Value(sessionUUIDCtxKey{}).(string)
 	return sessionUUID, ok
 }
+
+const SessionTokenKey = "Authorization"

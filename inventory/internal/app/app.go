@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	interceptor_auth "inventory/internal/interceptors/auth"
 	"log/slog"
 	"net"
 	"os"
@@ -111,6 +112,8 @@ func (a *App) initLogger(ctx context.Context) {
 }
 
 func (a *App) initGRPCServer(ctx context.Context) {
+	var authHandler = interceptor_auth.AuthorizationInterceptor(a.diContainer.IamClient(ctx))
+
 	a.grpcServer = grpc.NewServer(
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle:     grpcMaxConnectionIdle,
@@ -123,6 +126,8 @@ func (a *App) initGRPCServer(ctx context.Context) {
 			MinTime:             grpcMinPingInterval,
 			PermitWithoutStream: true, // Разрешить "тёплые" соединения без активных RPC
 		}),
+
+		grpc.UnaryInterceptor(authHandler),
 	)
 
 	api := a.diContainer.InventoryHandlers(ctx)
