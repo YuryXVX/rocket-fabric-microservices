@@ -64,6 +64,10 @@ func SessionModelToResponse(session model.Session) *v1.WhoamiResponse {
 			UpdatedAt: &updateAt,
 			ExpiresAt: expiresAt,
 		},
+
+		User: &v1Common.User{
+			Uuid: session.UserUUID.String(),
+		},
 	}
 }
 

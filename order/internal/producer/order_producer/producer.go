@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"order/internal/model"
 	"plaform/pkg/kafka"
+	kafka_middleware "plaform/pkg/kafka/middleware"
 	v1 "shared/pkg/proto/events/v1"
 
 	"google.golang.org/protobuf/proto"
@@ -35,7 +36,8 @@ func (s *service) ProduceOrderRecord(ctx context.Context, event model.OrderPaidE
 	}
 
 	return s.orderProducer.Send(ctx, &kafka.Message{
-		Key:   []byte(event.EventUuid),
-		Value: payload,
+		Key:     []byte(event.EventUuid),
+		Value:   payload,
+		Headers: kafka_middleware.ProducerSessionHeaders(ctx),
 	})
 }

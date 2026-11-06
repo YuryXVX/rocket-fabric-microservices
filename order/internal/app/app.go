@@ -46,7 +46,12 @@ func New(cxt context.Context) *App {
 func (a *App) Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
-	r, err := a.setupRouter(a.diContainer.OrderHandlers(ctx))
+	iam := a.diContainer.IamClient(ctx)
+
+	r, err := a.setupRouter(
+		a.diContainer.OrderHandlers(ctx),
+		iam,
+	)
 
 	if err != nil {
 		slog.Error("ошибка при создании роутера", "error", err)
@@ -136,7 +141,7 @@ func (a *App) initLogger(ctx context.Context) {
 	logger.Init("info")
 }
 
-func (a *App) setupRouter(h orderV1.Handler) (chi.Router, error) {
+func (a *App) setupRouter(h orderV1.Handler, iam customMiddleware.IamClient) (chi.Router, error) {
 	orderServer, err := orderV1.NewServer(h)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка создания сервера OpenAPI: %w", err)
@@ -148,6 +153,7 @@ func (a *App) setupRouter(h orderV1.Handler) (chi.Router, error) {
 	r.Use(middleware.Recoverer)
 	r.Use(customMiddleware.RequestLogger)
 	r.Use(middleware.Timeout(middlewareTimeout))
+	r.Use(customMiddleware.AuthMiddleware(iam))
 
 	r.Handle("/api/*", orderServer)
 

@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
+	"plaform/pkg/auth"
 	"time"
 )
 
@@ -24,4 +26,33 @@ func RequestLogger(next http.Handler) http.Handler {
 		// Логируем окончание запроса с временем выполнения
 		slog.InfoContext(r.Context(), "✅ запрос завершен", "method", r.Method, "path", r.URL.Path, "duration", duration)
 	})
+}
+
+type IamClient interface {
+	WhoIam(context.Context, string) (string, error)
+}
+
+func AuthMiddleware(iam IamClient) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			h := r.Header.Get("Authorization")
+
+			if h == "" {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			sessionUUID, err := iam.WhoIam(r.Context(), h)
+
+			if err != nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			next.ServeHTTP(
+				w,
+				r.WithContext(auth.WithSessionUUID(r.Context(), sessionUUID)),
+			)
+		})
+	}
 }

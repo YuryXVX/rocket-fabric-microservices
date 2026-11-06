@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	apiV1 "order/internal/api/order/v1"
+	"order/internal/client/grpc/iam"
 	"order/internal/client/grpc/inventory"
 	"order/internal/client/grpc/payment"
 	"order/internal/consumer/assembly"
@@ -13,8 +14,8 @@ import (
 	"os"
 	"plaform/pkg/closer"
 	"plaform/pkg/di"
-	"plaform/pkg/kafka/consumer"
 	kafka_middleware "plaform/pkg/kafka/middleware"
+	iamV1 "shared/pkg/proto/auth/v1"
 	inventoryV1 "shared/pkg/proto/inventory/v1"
 	paymentV1 "shared/pkg/proto/payment/v1"
 
@@ -29,12 +30,15 @@ import (
 	orderV1 "shared/pkg/openapi/order/v1"
 
 	wrappedKafkaConsumer "plaform/pkg/kafka/consumer"
-	"plaform/pkg/kafka/producer"
+	wrappedKafkaProducer "plaform/pkg/kafka/producer"
+
+	customMiddleware "order/internal/api/middleware"
 )
 
 const (
 	inventoryAddress = "127.0.0.1:50051"
 	paymentAddress   = "127.0.0.1:50050"
+	iamAddress       = "127.0.0.1:50049"
 )
 
 type ConsumerService interface {
@@ -43,12 +47,13 @@ type ConsumerService interface {
 
 type diContainer struct {
 	// grpc clients
+	iamGrpcClient       di.Value[customMiddleware.IamClient]
 	inventoryGrpcClient di.Value[service.InventoryClientGrpc]
 	paymentGrpcClient   di.Value[service.PaymentClientGrpc]
 
 	// обертки для kafka
-	producer di.Value[*producer.Producer]
-	consumer di.Value[*consumer.Consumer]
+	producer di.Value[*wrappedKafkaProducer.Producer]
+	consumer di.Value[*wrappedKafkaConsumer.Consumer]
 
 	syncProducer  di.Value[sarama.SyncProducer]
 	consumerGroup di.Value[sarama.ConsumerGroup]
@@ -157,6 +162,25 @@ func (di *diContainer) PaymentGRPCClient(ctx context.Context) service.PaymentCli
 	})
 }
 
+func (di *diContainer) IamClient(ctx context.Context) customMiddleware.IamClient {
+	return di.iamGrpcClient.Get(ctx, func(ctx context.Context) customMiddleware.IamClient {
+		connection, err := createConnection(iamAddress)
+
+		if err != nil {
+			slog.Error("ошибки при создании коннекшена", "error", err)
+		}
+
+		closer.Add("close iam grpc connection", func(ctx context.Context) error {
+			connection.Close()
+			return nil
+		})
+
+		client := iamV1.NewAuthServiceClient(connection)
+
+		return iam.New(client)
+	})
+}
+
 func (di *diContainer) OrderService(ctx context.Context) apiV1.OrderService {
 	return di.orderService.Get(ctx, func(ctx context.Context) apiV1.OrderService {
 		return service.New(
@@ -203,9 +227,9 @@ func (d *diContainer) SyncProducer(ctx context.Context) sarama.SyncProducer {
 	})
 }
 
-func (d *diContainer) Producer(ctx context.Context) *producer.Producer {
-	return d.producer.Get(ctx, func(ctx context.Context) *producer.Producer {
-		return producer.NewProducer(d.SyncProducer(ctx), "order.paid")
+func (d *diContainer) Producer(ctx context.Context) *wrappedKafkaProducer.Producer {
+	return d.producer.Get(ctx, func(ctx context.Context) *wrappedKafkaProducer.Producer {
+		return wrappedKafkaProducer.NewProducer(d.SyncProducer(ctx), "order.paid")
 	})
 }
 
@@ -218,6 +242,7 @@ func (d *diContainer) Consumer(ctx context.Context) *wrappedKafkaConsumer.Consum
 			},
 			wrappedKafkaConsumer.WithMiddlewares(
 				kafka_middleware.ConsumerLogging(),
+				kafka_middleware.ConsumerSession(),
 			),
 		)
 	})

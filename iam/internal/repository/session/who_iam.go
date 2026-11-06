@@ -9,7 +9,6 @@ import (
 	"iam/internal/repository/redis_view"
 
 	"github.com/google/uuid"
-	"github.com/redis/go-redis/v9"
 )
 
 var ErrSessionNotFound = errors.New("session not found in cache")
@@ -22,11 +21,13 @@ func (r *repository) WhoIam(ctx context.Context, in uuid.UUID) (model.Session, e
 	err := r.client.HGetAll(ctx, key).Scan(&view)
 
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return model.Session{}, ErrSessionNotFound
-		}
-
 		return model.Session{}, err
+	}
+
+	fmt.Printf("view %+v", view.UserUUID)
+
+	if view.UserUUID == uuid.Nil {
+		return model.Session{}, ErrSessionNotFound
 	}
 
 	view.UUID = in
